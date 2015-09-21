@@ -30,138 +30,138 @@ import java.io.OutputStream;
 
 public class JsonFormatterTest extends TestCase {
 
-    private static final String xmlInput = "<pizza>\n" +
-                                           "    <name>Meat Sizzler</name>\n" +
-                                           "    <price>500.0</price>\n" +
-                                           "    <toppings>\n" +
-                                           "        <topping>\n" +
-                                           "            <id>9999</id>\n" +
-                                           "            <name>Steak</name>\n" +
-                                           "            <extraPrice>4.00</extraPrice>\n" +
-                                           "            <category>NONVEG</category>\n" +
-                                           "        </topping>\n" +
-                                           "        <topping>\n" +
-                                           "            <id>9998</id>\n" +
-                                           "            <name>Sun Dried Tomato</name>\n" +
-                                           "            <extraPrice>4.00</extraPrice>\n" +
-                                           "            <category>VEGETARIAN</category>\n" +
-                                           "        </topping>\n" +
-                                           "        <topping>\n" +
-                                           "            <id>9997</id>\n" +
-                                           "            <name>Mixed Peppers</name>\n" +
-                                           "            <extraPrice>3.00</extraPrice>\n" +
-                                           "            <category>VEGETARIAN</category>\n" +
-                                           "        </topping>\n" +
-                                           "        <topping>\n" +
-                                           "            <id>9996</id>\n" +
-                                           "            <name>Cajun Chicken</name>\n" +
-                                           "            <extraPrice>3.00</extraPrice>\n" +
-                                           "            <category>NONVEG</category>\n" +
-                                           "        </topping>\n" +
-                                           "        <topping>\n" +
-                                           "            <id>9995</id>\n" +
-                                           "            <name>Chorizo Sausage</name>\n" +
-                                           "            <extraPrice>4.00</extraPrice>\n" +
-                                           "            <category>NONVEG</category>\n" +
-                                           "        </topping>\n" +
-                                           "    </toppings>\n" +
+    private static final String xmlInput = "<pizza>" +
+                                           "    <name>Meat Sizzler</name>" +
+                                           "    <price>500.0</price>" +
+                                           "    <toppings>" +
+                                           "        <topping>" +
+                                           "            <id>9999</id>" +
+                                           "            <name>Steak</name>" +
+                                           "            <extraPrice>4.00</extraPrice>" +
+                                           "            <category>NONVEG</category>" +
+                                           "        </topping>" +
+                                           "        <topping>" +
+                                           "            <id>9998</id>" +
+                                           "            <name>Sun Dried Tomato</name>" +
+                                           "            <extraPrice>4.00</extraPrice>" +
+                                           "            <category>VEGETARIAN</category>" +
+                                           "        </topping>" +
+                                           "        <topping>" +
+                                           "            <id>9997</id>" +
+                                           "            <name>Mixed Peppers</name>" +
+                                           "            <extraPrice>3.00</extraPrice>" +
+                                           "            <category>VEGETARIAN</category>" +
+                                           "        </topping>" +
+                                           "        <topping>" +
+                                           "            <id>9996</id>" +
+                                           "            <name>Cajun Chicken</name>" +
+                                           "            <extraPrice>3.00</extraPrice>" +
+                                           "            <category>NONVEG</category>" +
+                                           "        </topping>" +
+                                           "        <topping>" +
+                                           "            <id>9995</id>" +
+                                           "            <name>Chorizo Sausage</name>" +
+                                           "            <extraPrice>4.00</extraPrice>" +
+                                           "            <category>NONVEG</category>" +
+                                           "        </topping>" +
+                                           "    </toppings>" +
                                            "</pizza>";
 
     public static final String jsonOut = "{\"pizza\":{\"name\":\"Meat Sizzler\",\"price\":500.0,\"toppings\":{\"topping\":[{\"id\":9999,\"name\":\"Steak\",\"extraPrice\":4.00,\"category\":\"NONVEG\"},{\"id\":9998,\"name\":\"Sun Dried Tomato\",\"extraPrice\":4.00,\"category\":\"VEGETARIAN\"},{\"id\":9997,\"name\":\"Mixed Peppers\",\"extraPrice\":3.00,\"category\":\"VEGETARIAN\"},{\"id\":9996,\"name\":\"Cajun Chicken\",\"extraPrice\":3.00,\"category\":\"NONVEG\"},{\"id\":9995,\"name\":\"Chorizo Sausage\",\"extraPrice\":4.00,\"category\":\"NONVEG\"}]}}}";
 
-    public static final String xmlInput_1 = "<pizza>\n" +
-                                           "    <name>Meat Sizzler</name>\n" +
-                                           "    <price>500.0</price>\n" +
-                                           "    <toppings>\n" +
-                                           "        <topping>\n" +
-                                           "            <id>9999</id>\n" +
-                                           "            <name>Steak</name>\n" +
-                                           "            <extraPrice>4.00</extraPrice>\n" +
-                                           "            <category>NONVEG</category>\n" +
-                                           "        </topping>\n" +
-                                           "    </toppings>\n" +
+    public static final String xmlInput_1 = "<pizza>" +
+                                           "    <name>Meat Sizzler</name>" +
+                                           "    <price>500.0</price>" +
+                                           "    <toppings>" +
+                                           "        <topping>" +
+                                           "            <id>9999</id>" +
+                                           "            <name>Steak</name>" +
+                                           "            <extraPrice>4.00</extraPrice>" +
+                                           "            <category>NONVEG</category>" +
+                                           "        </topping>" +
+                                           "    </toppings>" +
                                            "</pizza>";
 
     public static final String jsonOut_1 = "{\"pizza\":{\"name\":\"Meat Sizzler\",\"price\":500.0,\"toppings\":{\"topping\":{\"id\":9999,\"name\":\"Steak\",\"extraPrice\":4.00,\"category\":\"NONVEG\"}}}}";
 
-    public static final String xmlInput_2 = "<pizza>\n" +
-                                            "    <name>Meat Sizzler</name>\n" +
-                                            "    <price>500.0</price>\n" +
-                                            "    <toppings>\n" +
-                                            "        <topping>\n" +
-                                            "            <id>9999</id>\n" +
-                                            "            <name>Steak</name>\n" +
-                                            "            <extraPrice>4.00</extraPrice>\n" +
-                                            "            <category>NONVEG</category>\n" +
-                                            "        </topping>\n" +
-                                            "        <topping/>\n" +
-                                            "    </toppings>\n" +
+    public static final String xmlInput_2 = "<pizza>" +
+                                            "    <name>Meat Sizzler</name>" +
+                                            "    <price>500.0</price>" +
+                                            "    <toppings>" +
+                                            "        <topping>" +
+                                            "            <id>9999</id>" +
+                                            "            <name>Steak</name>" +
+                                            "            <extraPrice>4.00</extraPrice>" +
+                                            "            <category>NONVEG</category>" +
+                                            "        </topping>" +
+                                            "        <topping/>" +
+                                            "    </toppings>" +
                                             "</pizza>";
 
     public static final String jsonOut_2 = "{\"pizza\":{\"name\":\"Meat Sizzler\",\"price\":500.0,\"toppings\":{\"topping\":[{\"id\":9999,\"name\":\"Steak\",\"extraPrice\":4.00,\"category\":\"NONVEG\"},null]}}}";
 
-    public static final String xmlInput_3 = "<pizza>\n" +
-                                            "    <name>Meat Sizzler</name>\n" +
-                                            "    <price>500.0</price>\n" +
-                                            "    <toppings>\n" +
-                                            "        <topping>\n" +
-                                            "            <id>9999</id>\n" +
-                                            "            <name>Steak</name>\n" +
-                                            "            <extraPrice>4.00</extraPrice>\n" +
-                                            "            <category>NONVEG</category>\n" +
-                                            "        </topping>\n" +
-                                            "        <topping></topping>\n" +
-                                            "    </toppings>\n" +
+    public static final String xmlInput_3 = "<pizza>" +
+                                            "    <name>Meat Sizzler</name>" +
+                                            "    <price>500.0</price>" +
+                                            "    <toppings>" +
+                                            "        <topping>" +
+                                            "            <id>9999</id>" +
+                                            "            <name>Steak</name>" +
+                                            "            <extraPrice>4.00</extraPrice>" +
+                                            "            <category>NONVEG</category>" +
+                                            "        </topping>" +
+                                            "        <topping></topping>" +
+                                            "    </toppings>" +
                                             "</pizza>";
 
-    public static final String xmlInput_4 = "<jsonObject>\n" +
-                                            "    <pizza>\n" +
-                                            "        <name>Meat Sizzler</name>\n" +
-                                            "        <price>500.0</price>\n" +
-                                            "        <toppings>\n" +
-                                            "            <topping>\n" +
-                                            "                <id>9999</id>\n" +
-                                            "                <name>Steak</name>\n" +
-                                            "                <extraPrice>4.00</extraPrice>\n" +
-                                            "                <category>NONVEG</category>\n" +
-                                            "            </topping>\n" +
-                                            "        </toppings>\n" +
-                                            "    </pizza>\n" +
+    public static final String xmlInput_4 = "<jsonObject>" +
+                                            "    <pizza>" +
+                                            "        <name>Meat Sizzler</name>" +
+                                            "        <price>500.0</price>" +
+                                            "        <toppings>" +
+                                            "            <topping>" +
+                                            "                <id>9999</id>" +
+                                            "                <name>Steak</name>" +
+                                            "                <extraPrice>4.00</extraPrice>" +
+                                            "                <category>NONVEG</category>" +
+                                            "            </topping>" +
+                                            "        </toppings>" +
+                                            "    </pizza>" +
                                             "</jsonObject>";
 
-    public static final String xmlInput_5 = "<jsonArray>\n" +
-                                            "    <jsonElement>\n" +
-                                            "        <pizza>\n" +
-                                            "            <name>Meat Sizzler</name>\n" +
-                                            "            <price>500.0</price>\n" +
-                                            "            <toppings>\n" +
-                                            "                <topping>\n" +
-                                            "                    <id>9999</id>\n" +
-                                            "                    <name>Steak</name>\n" +
-                                            "                    <extraPrice>4.00</extraPrice>\n" +
-                                            "                    <category>NONVEG</category>\n" +
-                                            "                </topping>\n" +
-                                            "            </toppings>\n" +
-                                            "        </pizza>\n" +
-                                            "    </jsonElement>\n" +
+    public static final String xmlInput_5 = "<jsonArray>" +
+                                            "    <jsonElement>" +
+                                            "        <pizza>" +
+                                            "            <name>Meat Sizzler</name>" +
+                                            "            <price>500.0</price>" +
+                                            "            <toppings>" +
+                                            "                <topping>" +
+                                            "                    <id>9999</id>" +
+                                            "                    <name>Steak</name>" +
+                                            "                    <extraPrice>4.00</extraPrice>" +
+                                            "                    <category>NONVEG</category>" +
+                                            "                </topping>" +
+                                            "            </toppings>" +
+                                            "        </pizza>" +
+                                            "    </jsonElement>" +
                                             "</jsonArray>";
 
-    public static final String xmlInput_6 = "<jsonArray>\n" +
-                                               "    <jsonElement>\n" +
-                                               "        <pizza>\n" +
-                                               "            <name>Meat Sizzler</name>\n" +
-                                               "            <price>500.0</price>\n" +
-                                               "            <toppings>\n" +
-                                               "                <topping>\n" +
-                                               "                    <id>9999</id>\n" +
-                                               "                    <name>Steak</name>\n" +
-                                               "                    <extraPrice>4.00</extraPrice>\n" +
-                                               "                    <category>NONVEG</category>\n" +
-                                               "                </topping>\n" +
-                                               "            </toppings>\n" +
-                                               "        </pizza>\n" +
-                                               "    </jsonElement>\n" +
-                                               "    <jsonElement/>\n" +
+    public static final String xmlInput_6 = "<jsonArray>" +
+                                               "    <jsonElement>" +
+                                               "        <pizza>" +
+                                               "            <name>Meat Sizzler</name>" +
+                                               "            <price>500.0</price>" +
+                                               "            <toppings>" +
+                                               "                <topping>" +
+                                               "                    <id>9999</id>" +
+                                               "                    <name>Steak</name>" +
+                                               "                    <extraPrice>4.00</extraPrice>" +
+                                               "                    <category>NONVEG</category>" +
+                                               "                </topping>" +
+                                               "            </toppings>" +
+                                               "        </pizza>" +
+                                               "    </jsonElement>" +
+                                               "    <jsonElement/>" +
                                                "</jsonArray>";
 
     public static final String jsonOut_6 = "[{\"pizza\":{\"name\":\"Meat Sizzler\",\"price\":500.0,\"toppings\":{\"topping\":{\"id\":9999,\"name\":\"Steak\",\"extraPrice\":4.00,\"category\":\"NONVEG\"}}}},null]";
@@ -181,7 +181,7 @@ public class JsonFormatterTest extends TestCase {
             JsonUtil.newJsonPayload(messageContext, inputStream, false, false);
             OutputStream out = Util.newOutputStream();
             formatter.writeTo(messageContext, null, out, false);
-            assertTrue(JsonDataSourceTest.expectedJSON.equals(out.toString()));
+            assertTrue(JsonDataSourceTest.expectedJSON.equals(out.toString().replace("\n", "").replace("\r", "")));
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             assertTrue(false);

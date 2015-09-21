@@ -31,14 +31,14 @@ import java.io.StringWriter;
 import java.io.Writer;
 
 public class JsonDataSourceTest extends TestCase {
-    public static final String expectedJSON = "{\n" +
-                                               "    \"id\":\"0001\",\n" +
-                                               "    \"ok\":true,\n" +
-                                               "    \"amount\":5250,\n" +
-                                               "    \"url\" : [\n" +
-                                               "            \"http://org.wso2.json/32_32\"\n" +
-                                               "    ]\n" +
-                                               "}\n";
+    public static final String expectedJSON = "{" +
+                                               "    \"id\":\"0001\"," +
+                                               "    \"ok\":true," +
+                                               "    \"amount\":5250," +
+                                               "    \"url\" : [" +
+                                               "            \"http://org.wso2.json/32_32\"" +
+                                               "    ]" +
+                                               "}";
 
     public static final String expectedXML = "<?xml version='1.0' encoding='UTF-8'?><jsonObject><id>0001</id><ok>true</ok><amount>5250</amount><?xml-multiple url?><url>http://org.wso2.json/32_32</url></jsonObject>";
 
@@ -48,20 +48,20 @@ public class JsonDataSourceTest extends TestCase {
             OMDataSource jsonData = Util.newJsonDataSource(inputStream);
             OutputStream outputStream = Util.newOutputStream();
             jsonData.serialize(outputStream, null);
-            assertTrue(expectedJSON.equals(outputStream.toString()));
+            assertTrue(expectedJSON.equals(outputStream.toString().replace("\n", "").replace("\r", "")));
 
             inputStream = Util.getJson(0);
             jsonData = Util.newJsonDataSource(inputStream);
             Writer stringWriter = new StringWriter();
             jsonData.serialize(stringWriter, null);
-            assertTrue(expectedJSON.equals(stringWriter.toString()));
+            assertTrue(expectedJSON.equals(stringWriter.toString().replace("\n", "").replace("\r", "")));
 
             inputStream = Util.getJson(0);
             jsonData = Util.newJsonDataSource(inputStream);
             outputStream = Util.newOutputStream();
             XMLStreamWriter xmlWriter = XMLOutputFactory.newFactory().createXMLStreamWriter(outputStream);
             jsonData.serialize(xmlWriter);
-            assertTrue(expectedXML.equals(outputStream.toString()));
+            assertTrue(expectedXML.equals(outputStream.toString().replace("\n", "").replace("\r", "")));
         } catch (FileNotFoundException e) {
             System.err.println("Could not create input stream. ERROR>>>\n" + e);
             assertTrue(false);
