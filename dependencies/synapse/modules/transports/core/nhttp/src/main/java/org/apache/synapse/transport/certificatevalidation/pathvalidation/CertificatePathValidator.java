@@ -94,8 +94,7 @@ public class CertificatePathValidator {
             param.addCertPathChecker(pathChecker);
             param.setRevocationEnabled(false);
             param.addCertStore(store);
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-            param.setDate(sdf.parse("01/09/2015")); // certificate may expire any day. so putting a hard coded day
+            param.setDate(new Date());
 
             validator.validate(certPath, param);
 
