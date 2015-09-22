@@ -34,14 +34,14 @@ public interface TestConstants {
      * CAUTION: Replace the certificates if they expire or are marked as revoked by their issuers. At the moment they are
      * valid. The expiry dates of the certificates are as follows:
      *
-     * github.com                    : 09/02/2015
-     * DigiCertHighAssuranceEVCA-1   : 11/10/2021
-     * DigiCertHighAssuranceEVRootCA : 11/10/2031
+     * github.com                               : 04/12/2016
+     * DigiCertSHA2ExtendedValidationServerCA   : 11/10/2021
+     * DigiCertHighAssuranceEVRootCA            : 11/10/2031
      */
     final static String REAL_PEER_CERT = "/org/apache/synapse/transport/certificatevalidation" +
             "/certificates/github/github.com";
     final static String INTERMEDIATE_CERT = "/org/apache/synapse/transport/certificatevalidation" +
-            "/certificates/github/DigiCertHighAssuranceEVCA-1";
+            "/certificates/github/DigiCertSHA2ExtendedValidationServerCA";
     final static String ROOT_CERT = "/org/apache/synapse/transport/certificatevalidation" +
             "/certificates/github/DigiCertHighAssuranceEVRootCA";
 }
