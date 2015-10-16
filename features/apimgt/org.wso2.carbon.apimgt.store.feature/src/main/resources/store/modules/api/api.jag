@@ -3,7 +3,7 @@ var getAPIDescription = function (api, username) {
     var swaggerString,
     		log = new Log(),
             store = jagg.module("manager").getAPIStoreObj();
-	
+
 	try {
 		var encode = require('encode');
     		encode = new encode.Encode();
@@ -38,7 +38,7 @@ var getTiers = function () {
     try {
         tiers = provider.getTiers(tenant);
         if (log.isDebugEnabled()) {
-            log.debug("getTiers " +  " : " + tiers);
+            log.debug("getTiers " +  " : " + stringify(tiers));
         }
 
 
@@ -58,12 +58,12 @@ var getTiers = function () {
 var getAPIEndpointURLs = function (api, username) {
     var log = new Log(),
             store = jagg.module("manager").getAPIStoreObj();
-	
+
 	try {
 		var encode = require('encode');
     		encode = new encode.Encode();
         	var endpointURLs = store.getAPIEndpointURLs(api.provider, api.name, api.version, username);
-		        
+
         if (log.isDebugEnabled()) {
             log.debug("getAPIEndpointURLs : " + stringify(endpointURLs));
         }
