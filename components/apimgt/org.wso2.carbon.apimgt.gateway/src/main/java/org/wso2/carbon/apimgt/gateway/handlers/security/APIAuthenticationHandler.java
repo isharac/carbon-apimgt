@@ -281,6 +281,23 @@ public class APIAuthenticationHandler extends AbstractHandler implements Managed
 
         String context = (String) messageContext.getProperty(RESTConstants.REST_API_CONTEXT);
         String api_version = (String) messageContext.getProperty(RESTConstants.SYNAPSE_REST_API);
+        String apiPublisher = (String) messageContext.getProperty(APIMgtGatewayConstants.API_PUBLISHER);
+
+        String fullRequestPath = (String) messageContext.getProperty(RESTConstants.REST_FULL_REQUEST_PATH);
+        int tenantDomainIndex = fullRequestPath.indexOf("/t/");
+
+        String tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
+        if (tenantDomainIndex != -1) {
+            String temp = fullRequestPath.substring(tenantDomainIndex + 3, fullRequestPath.length());
+            tenantDomain = temp.substring(0, temp.indexOf("/"));
+        }
+        if (apiPublisher == null) {
+            apiPublisher = getAPIProviderFromRESTAPI(api_version);
+        }
+
+        if (apiPublisher != null && !apiPublisher.endsWith(tenantDomain)) {
+            apiPublisher = apiPublisher + "@" + tenantDomain;
+        }
 
         int index = api_version.indexOf("--");
 
@@ -290,23 +307,6 @@ public class APIAuthenticationHandler extends AbstractHandler implements Managed
 
         String api = api_version.split(":")[0];
         String version = (String) messageContext.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION);
-
-        String fullRequestPath = (String) messageContext.getProperty(RESTConstants.REST_FULL_REQUEST_PATH);
-        int tenantDomainIndex = fullRequestPath.indexOf("/t/");
-        String apiPublisher = (String) messageContext.getProperty(APIMgtGatewayConstants.API_PUBLISHER);
-        String tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
-        if (tenantDomainIndex != -1) {
-            String temp = fullRequestPath.substring(tenantDomainIndex + 3, fullRequestPath.length());
-            tenantDomain = temp.substring(0, temp.indexOf("/"));
-        }
-
-        if (apiPublisher == null) {
-            apiPublisher = getAPIProviderFromRESTAPI(api_version);
-        }
-
-        if (apiPublisher != null && !apiPublisher.endsWith(tenantDomain)) {
-            apiPublisher = apiPublisher + "@" + tenantDomain;
-        }
 
         String resource = extractResource(messageContext);
         String method = (String) (axis2MsgContext.getProperty(
