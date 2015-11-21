@@ -421,10 +421,11 @@ public class ApiMgtDAO {
 
         try {
             conn = APIMgtDBUtil.getConnection();
+            conn.setAutoCommit(false);
             ps = conn.prepareStatement(sqlQuery);
             ps.setString(1, consumerKey);
             ps.executeUpdate();
-
+            conn.commit();
         } catch (SQLException e) {
             handleException("Error while executing SQL for deleting OAuth application", e);
         } finally {
@@ -3680,6 +3681,7 @@ public class ApiMgtDAO {
         PreparedStatement prepStmt = null;
         try {
             connection = APIMgtDBUtil.getConnection();
+            connection.setAutoCommit(false);
             prepStmt = connection.prepareStatement(sqlDeleteAccessAllowDomains);
             prepStmt.setString(1, consumerKey);
             prepStmt.execute();
@@ -4026,6 +4028,7 @@ public class ApiMgtDAO {
         try {
             consumerKey = APIUtil.encryptToken(consumerKey);
             connection = APIMgtDBUtil.getConnection();
+            connection.setAutoCommit(false);
             //Add access token
             prepStmt = connection.prepareStatement(sqlAddAccessToken);
             prepStmt.setString(1, APIUtil.encryptToken(accessToken));
@@ -4115,6 +4118,7 @@ public class ApiMgtDAO {
 
             try {
                 Connection connection = APIMgtDBUtil.getConnection();
+                connection.setAutoCommit(false);
                 PreparedStatement ps = connection.prepareStatement(addApplicationKeyMapping);
                 ps.setString(1, APIUtil.encryptToken(consumerKey));
 //                ps.setString(2,APIConstants.AppRegistrationStatus.REGISTRATION_COMPLETED);
@@ -4168,6 +4172,7 @@ public class ApiMgtDAO {
                     "VALUES (?,?,?,?,?)";
             try {
                 connection = APIMgtDBUtil.getConnection();
+                connection.setAutoCommit(false);
 
                 ps = connection.prepareStatement(addApplicationKeyMapping);
                 ps.setInt(1, applicationId);
@@ -4961,8 +4966,7 @@ public class ApiMgtDAO {
         float avrRating = 0;
         try {
             conn = APIMgtDBUtil.getConnection();
-            conn.setAutoCommit(false);
-            
+
             avrRating = getAverageRating(apiId, conn);
                         
 
@@ -4990,7 +4994,6 @@ public class ApiMgtDAO {
         ResultSet rs = null;
         try {
             conn = APIMgtDBUtil.getConnection();
-            conn.setAutoCommit(false);
 
             if (apiId == -1) {
                 String msg = "Invalid APIId : " + apiId;
@@ -5256,8 +5259,7 @@ public class ApiMgtDAO {
         int applicationId = getApplicationId(appName, userId);
         try {
             conn = APIMgtDBUtil.getConnection();
-            conn.setAutoCommit(false);
-            
+
             String sqlQuery = "SELECT   APPLICATION_STATUS FROM   AM_APPLICATION " + "WHERE " 
                             + "   APPLICATION_ID= ?";
 
@@ -5269,7 +5271,6 @@ public class ApiMgtDAO {
             }
             ps.close();
             
-            conn.commit();
         } catch (SQLException e) {
             if (conn != null) {
                 try {
@@ -5804,7 +5805,6 @@ public class ApiMgtDAO {
 
         try {
             connection = APIMgtDBUtil.getConnection();
-            connection.setAutoCommit(false);
             prepStmt = connection.prepareStatement(getConsumerKeyQuery);
             prepStmt.setInt(1, appId);
             prepStmt.setString(2, mode);
@@ -5954,6 +5954,7 @@ public class ApiMgtDAO {
         PreparedStatement ps = null;
         try {
             connection = APIMgtDBUtil.getConnection();
+            connection.setAutoCommit(false);
             String deleteKeyMappingQuery = "DELETE " +
                     "FROM" +
                     "   AM_APPLICATION_KEY_MAPPING " +
@@ -5985,6 +5986,7 @@ public class ApiMgtDAO {
         PreparedStatement ps = null;
         try {
             connection = APIMgtDBUtil.getConnection();
+            connection.setAutoCommit(false);
             String deleteRegistrationEntry = "DELETE " +
                     "FROM" +
                     "   AM_APPLICATION_KEY_MAPPING  " +
@@ -6021,6 +6023,7 @@ public class ApiMgtDAO {
         PreparedStatement ps = null;
         try {
             connection = APIMgtDBUtil.getConnection();
+            connection.setAutoCommit(false);
             String deleteRegistrationEntry = "DELETE " +
                     "FROM" +
                     "   AM_APPLICATION_REGISTRATION " +
@@ -7168,6 +7171,8 @@ public void addUpdateAPIAsDefaultVersion(API api, Connection connection) throws 
                 "   CONSUMER_KEY = ?";
 
         try {
+            connection = APIMgtDBUtil.getConnection();
+            connection.setAutoCommit(false);
             prepStmt = connection.prepareStatement(deleteApplicationKeyQuery);
             prepStmt.setString(1, consumerKey);
             prepStmt.execute();
