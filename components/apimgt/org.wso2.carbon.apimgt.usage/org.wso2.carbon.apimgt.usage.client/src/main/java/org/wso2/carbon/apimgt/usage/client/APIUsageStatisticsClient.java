@@ -1308,6 +1308,10 @@ public class APIUsageStatisticsClient {
         Connection connection = null;
         Statement statement = null;
         ResultSet resultSet = null;
+        String tenantDomain = MultitenantUtils.getTenantDomain(providerName);
+        if (tenantDomain.equalsIgnoreCase(org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME)) {
+            providerName = providerName + "@" + tenantDomain;
+        }
         Collection<APIAccessTime> lastAccessTimeData = new ArrayList<APIAccessTime>();
 
         try {
@@ -1337,7 +1341,7 @@ public class APIUsageStatisticsClient {
                     APIUsageStatisticsClientConstants.TIME + "," +
                     APIUsageStatisticsClientConstants.USER_ID +
                     " FROM " + tableName + " WHERE " + APIUsageStatisticsClientConstants.API_PUBLISHER_THROTTLE_TABLE +
-                    " = " + providerName + ")" +
+                    " = '" + providerName + "')" +
                     dataTableName + " ON " +
                     maxTimesTable + "." + APIUsageStatisticsClientConstants.API + "=" +
                     dataTableName + "." + APIUsageStatisticsClientConstants.API + " AND " +
