@@ -1261,7 +1261,7 @@ public class APIUsageStatisticsClient {
             throws APIMgtUsageQueryServiceClientException {
 
         Collection<APIAccessTime> accessTimes =
-                getLastAccessData(APIUsageStatisticsClientConstants.API_VERSION_KEY_LAST_ACCESS_SUMMARY, providerName);
+                getLastAccessData(APIUsageStatisticsClientConstants.API_VERSION_KEY_LAST_ACCESS_SUMMARY);
         List<API> providerAPIs = getAPIsByProvider(providerName);
         Map<String, APIAccessTime> lastAccessTimes = new TreeMap<String, APIAccessTime>();
         for (APIAccessTime accessTime : accessTimes) {
@@ -1302,16 +1302,12 @@ public class APIUsageStatisticsClient {
      * @return a collection containing the data related to API last access times
      * @throws APIMgtUsageQueryServiceClientException if an error occurs while querying the database
      */
-    private Collection<APIAccessTime> getLastAccessData(String tableName, String providerName)
+    private Collection<APIAccessTime> getLastAccessData(String tableName)
             throws APIMgtUsageQueryServiceClientException {
 
         Connection connection = null;
         Statement statement = null;
         ResultSet resultSet = null;
-        String tenantDomain = MultitenantUtils.getTenantDomain(providerName);
-        if (tenantDomain.equalsIgnoreCase(org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME)) {
-            providerName = providerName + "@" + tenantDomain;
-        }
         Collection<APIAccessTime> lastAccessTimeData = new ArrayList<APIAccessTime>();
 
         try {
@@ -1340,8 +1336,7 @@ public class APIUsageStatisticsClient {
                     APIUsageStatisticsClientConstants.REQUEST_TIME + "," +
                     APIUsageStatisticsClientConstants.TIME + "," +
                     APIUsageStatisticsClientConstants.USER_ID +
-                    " FROM " + tableName + " WHERE " + APIUsageStatisticsClientConstants.API_PUBLISHER_THROTTLE_TABLE +
-                    " = '" + providerName + "')" +
+                    " FROM " + tableName + ")" +
                     dataTableName + " ON " +
                     maxTimesTable + "." + APIUsageStatisticsClientConstants.API + "=" +
                     dataTableName + "." + APIUsageStatisticsClientConstants.API + " AND " +
