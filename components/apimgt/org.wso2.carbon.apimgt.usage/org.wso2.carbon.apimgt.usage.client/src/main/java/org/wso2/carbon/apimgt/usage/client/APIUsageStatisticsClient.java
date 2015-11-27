@@ -25,13 +25,17 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.json.simple.JSONArray;
 import org.wso2.carbon.apimgt.api.APIConsumer;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.APIProvider;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.SubscribedAPI;
 import org.wso2.carbon.apimgt.api.model.Subscriber;
-import org.wso2.carbon.apimgt.impl.*;
+import org.wso2.carbon.apimgt.impl.APIConstants;
+import org.wso2.carbon.apimgt.impl.APIManagerAnalyticsConfiguration;
+import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
+import org.wso2.carbon.apimgt.impl.APIManagerFactory;
 import org.wso2.carbon.apimgt.impl.utils.APIMgtDBUtil;
 import org.wso2.carbon.apimgt.usage.client.billing.APIUsageRangeCost;
 import org.wso2.carbon.apimgt.usage.client.billing.PaymentPlan;
@@ -59,7 +63,6 @@ import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import org.json.simple.JSONArray;
 
 
 public class APIUsageStatisticsClient {
@@ -1258,7 +1261,7 @@ public class APIUsageStatisticsClient {
             throws APIMgtUsageQueryServiceClientException {
 
         Collection<APIAccessTime> accessTimes =
-                getLastAccessData(APIUsageStatisticsClientConstants.API_VERSION_KEY_LAST_ACCESS_SUMMARY);
+                getLastAccessData(APIUsageStatisticsClientConstants.API_VERSION_KEY_LAST_ACCESS_SUMMARY, providerName);
         List<API> providerAPIs = getAPIsByProvider(providerName);
         Map<String, APIAccessTime> lastAccessTimes = new TreeMap<String, APIAccessTime>();
         for (APIAccessTime accessTime : accessTimes) {
@@ -1299,12 +1302,16 @@ public class APIUsageStatisticsClient {
      * @return a collection containing the data related to API last access times
      * @throws APIMgtUsageQueryServiceClientException if an error occurs while querying the database
      */
-    private Collection<APIAccessTime> getLastAccessData(String tableName)
+    private Collection<APIAccessTime> getLastAccessData(String tableName, String providerName)
             throws APIMgtUsageQueryServiceClientException {
 
         Connection connection = null;
         Statement statement = null;
         ResultSet resultSet = null;
+        String tenantDomain = MultitenantUtils.getTenantDomain(providerName);
+        if (tenantDomain.equalsIgnoreCase(org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME)) {
+            providerName = providerName + "@" + tenantDomain;
+        }
         Collection<APIAccessTime> lastAccessTimeData = new ArrayList<APIAccessTime>();
 
         try {
@@ -1333,12 +1340,13 @@ public class APIUsageStatisticsClient {
                     APIUsageStatisticsClientConstants.REQUEST_TIME + "," +
                     APIUsageStatisticsClientConstants.TIME + "," +
                     APIUsageStatisticsClientConstants.USER_ID +
-                    " FROM " + tableName + ")"+
+                    " FROM " + tableName + " WHERE " + APIUsageStatisticsClientConstants.API_PUBLISHER_THROTTLE_TABLE +
+                    " = '" + providerName + "')" +
                     dataTableName + " ON " +
-                    maxTimesTable+"." + APIUsageStatisticsClientConstants.API + "=" +
+                    maxTimesTable + "." + APIUsageStatisticsClientConstants.API + "=" +
                     dataTableName + "." + APIUsageStatisticsClientConstants.API + " AND " +
-                    maxTimesTable+"."+"apiPublisher" + "=" + dataTableName+"."+"apiPublisher" + " AND " +
-                    maxTimesTable+"."+"maxTime="+dataTableName+"." + APIUsageStatisticsClientConstants.TIME;
+                    maxTimesTable + "." + "apiPublisher" + "=" + dataTableName + "." + "apiPublisher" + " AND " +
+                    maxTimesTable + "." + "maxTime=" + dataTableName + "." + APIUsageStatisticsClientConstants.TIME;
 
 
             resultSet = statement.executeQuery(query);
