@@ -37,6 +37,7 @@ import org.wso2.carbon.apimgt.impl.APIManagerAnalyticsConfiguration;
 import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
 import org.wso2.carbon.apimgt.impl.APIManagerFactory;
 import org.wso2.carbon.apimgt.impl.utils.APIMgtDBUtil;
+import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 import org.wso2.carbon.apimgt.usage.client.billing.APIUsageRangeCost;
 import org.wso2.carbon.apimgt.usage.client.billing.PaymentPlan;
 import org.wso2.carbon.apimgt.usage.client.dto.*;
@@ -1260,38 +1261,32 @@ public class APIUsageStatisticsClient {
     public List<APIVersionLastAccessTimeDTO> getLastAccessTimesByAPI(String providerName, String fromDate, String toDate, int limit)
             throws APIMgtUsageQueryServiceClientException {
 
-        Collection<APIAccessTime> accessTimes =
-                getLastAccessData(APIUsageStatisticsClientConstants.API_VERSION_KEY_LAST_ACCESS_SUMMARY);
+        Collection<APIAccessTime> accessTimes = getLastAccessData(
+                APIUsageStatisticsClientConstants.API_VERSION_KEY_LAST_ACCESS_SUMMARY, providerName);
         List<API> providerAPIs = getAPIsByProvider(providerName);
-        Map<String, APIAccessTime> lastAccessTimes = new TreeMap<String, APIAccessTime>();
+
+        List<APIVersionLastAccessTimeDTO> accessTimeByAPI = new ArrayList<APIVersionLastAccessTimeDTO>();
+        APIVersionLastAccessTimeDTO accessTimeDTO;
+        DateFormat dateFormat = new SimpleDateFormat();
+
         for (APIAccessTime accessTime : accessTimes) {
             for (API providerAPI : providerAPIs) {
                 if (providerAPI.getId().getApiName().equals(accessTime.apiName) &&
                         providerAPI.getId().getVersion().equals(accessTime.apiVersion) &&
                         providerAPI.getContext().equals(accessTime.context)) {
 
+                    accessTimeDTO = new APIVersionLastAccessTimeDTO();
                     String apiName = accessTime.apiName + " (" + providerAPI.getId().getProviderName() + ")";
-                    APIAccessTime lastAccessTime = lastAccessTimes.get(apiName);
-                    if (lastAccessTime == null || lastAccessTime.accessTime < accessTime.accessTime) {
-                        lastAccessTimes.put(apiName, accessTime);
-                        break;
-                    }
+                    accessTimeDTO.setApiName(apiName);
+                    accessTimeDTO.setApiVersion(accessTime.apiVersion);
+                    accessTimeDTO.setLastAccessTime(dateFormat.format(accessTime.accessTime));
+                    accessTimeDTO.setUser(accessTime.username);
+                    accessTimeByAPI.add(accessTimeDTO);
                 }
             }
         }
-        Map<String, APIVersionLastAccessTimeDTO> accessTimeByAPI = new TreeMap<String, APIVersionLastAccessTimeDTO>();
-        List<APIVersionLastAccessTimeDTO> accessTimeDTOs = new ArrayList<APIVersionLastAccessTimeDTO>();
-        DateFormat dateFormat = new SimpleDateFormat();
-        for (Map.Entry<String, APIAccessTime> entry : lastAccessTimes.entrySet()) {
-            APIVersionLastAccessTimeDTO accessTimeDTO = new APIVersionLastAccessTimeDTO();
-            accessTimeDTO.setApiName(entry.getKey());
-            APIAccessTime lastAccessTime = entry.getValue();
-            accessTimeDTO.setApiVersion(lastAccessTime.apiVersion);
-            accessTimeDTO.setLastAccessTime(dateFormat.format(lastAccessTime.accessTime));
-            accessTimeDTO.setUser(lastAccessTime.username);
-            accessTimeByAPI.put(entry.getKey(), accessTimeDTO);
-        }
-        return getLastAccessTimeTopEntries(new ArrayList<APIVersionLastAccessTimeDTO>(accessTimeByAPI.values()), limit);
+
+        return getLastAccessTimeTopEntries(accessTimeByAPI, limit);
 
     }
 
@@ -1302,7 +1297,7 @@ public class APIUsageStatisticsClient {
      * @return a collection containing the data related to API last access times
      * @throws APIMgtUsageQueryServiceClientException if an error occurs while querying the database
      */
-    private Collection<APIAccessTime> getLastAccessData(String tableName)
+    private Collection<APIAccessTime> getLastAccessData(String tableName,String providerName)
             throws APIMgtUsageQueryServiceClientException {
 
         Connection connection = null;
@@ -1310,41 +1305,73 @@ public class APIUsageStatisticsClient {
         ResultSet resultSet = null;
         Collection<APIAccessTime> lastAccessTimeData = new ArrayList<APIAccessTime>();
 
+        String tenantDomain = MultitenantUtils.getTenantDomain(providerName);
         try {
             connection = dataSource.getConnection();
             statement = connection.createStatement();
             String dataTableName = "dataTable";
             String maxTimesTable = "maxTimesTable";
             String query;
+            boolean succeed = false;
 
-            query = "SELECT " +
-                    dataTableName + "." + APIUsageStatisticsClientConstants.API + "," +
-                    dataTableName + "." + APIUsageStatisticsClientConstants.VERSION + "," +
-                    dataTableName + "." + APIUsageStatisticsClientConstants.CONTEXT + "," +
-                    dataTableName + "." + APIUsageStatisticsClientConstants.REQUEST_TIME + "," +
-                    dataTableName + "." + APIUsageStatisticsClientConstants.USER_ID +
-                    " FROM (" +
-                    " SELECT " + APIUsageStatisticsClientConstants.API + "," +
-                    "apiPublisher" + "," + "MAX(" + APIUsageStatisticsClientConstants.TIME + ")" +
-                    "AS maxTime FROM " + tableName + " GROUP BY " +
-                    APIUsageStatisticsClientConstants.API + ",apiPublisher) maxTimesTable INNER JOIN " +
-                    " (SELECT " +
-                    APIUsageStatisticsClientConstants.API + "," +
-                    APIUsageStatisticsClientConstants.VERSION + "," +
-                    APIUsageStatisticsClientConstants.CONTEXT + "," +
-                    "apiPublisher" + "," +
-                    APIUsageStatisticsClientConstants.REQUEST_TIME + "," +
-                    APIUsageStatisticsClientConstants.TIME + "," +
-                    APIUsageStatisticsClientConstants.USER_ID +
-                    " FROM " + tableName + ")" +
-                    dataTableName + " ON " +
-                    maxTimesTable + "." + APIUsageStatisticsClientConstants.API + "=" +
-                    dataTableName + "." + APIUsageStatisticsClientConstants.API + " AND " +
-                    maxTimesTable + "." + "apiPublisher" + "=" + dataTableName + "." + "apiPublisher" + " AND " +
-                    maxTimesTable + "." + "maxTime=" + dataTableName + "." + APIUsageStatisticsClientConstants.TIME;
+            StringBuilder lastAccessQuery = new StringBuilder(
+                    "SELECT " + APIUsageStatisticsClientConstants.API + "," + APIUsageStatisticsClientConstants.VERSION
+                            + "," + APIUsageStatisticsClientConstants.CONTEXT + ","
+                            + APIUsageStatisticsClientConstants.USER_ID + ","
+                            + APIUsageStatisticsClientConstants.REQUEST_TIME + " FROM "
+                            + APIUsageStatisticsClientConstants.API_LAST_ACCESS_TIME_SUMMARY);
+            if (providerName.startsWith(APIUsageStatisticsClientConstants.ALL_PROVIDERS)) {
+                lastAccessQuery.append(" where tenantDomain= \"" + tenantDomain + "\"");
+            } else {
+                providerName = APIUtil.getUserNameWithTenantSuffix(providerName);
+                lastAccessQuery
+                        .append(" where " + APIUsageStatisticsClientConstants.API_PUBLISHER_THROTTLE_TABLE + "= \""
+                                + providerName + "\"");
+            }
 
+            lastAccessQuery.append(" order by " + APIUsageStatisticsClientConstants.REQUEST_TIME + " DESC");
 
-            resultSet = statement.executeQuery(query);
+            //try to get data from table API_LAST_ACCESS_TIME_SUMMARY
+            try {
+                resultSet = statement.executeQuery(lastAccessQuery.toString());
+                //if succeed set the flag as true
+                succeed = true;
+            } catch (SQLException e) {
+                log.warn(
+                        "Error read data from Table " + APIUsageStatisticsClientConstants.API_LAST_ACCESS_TIME_SUMMARY);
+            }
+
+            //if the data reading from API_LAST_ACCESS_TIME_SUMMARY didn't work try the old code
+            if (!succeed) {
+                log.info("Trying to get Last Access Data from Table " + tableName);
+                query = "SELECT " +
+                        dataTableName + "." + APIUsageStatisticsClientConstants.API + "," +
+                        dataTableName + "." + APIUsageStatisticsClientConstants.VERSION + "," +
+                        dataTableName + "." + APIUsageStatisticsClientConstants.CONTEXT + "," +
+                        dataTableName + "." + APIUsageStatisticsClientConstants.REQUEST_TIME + "," +
+                        dataTableName + "." + APIUsageStatisticsClientConstants.USER_ID +
+                        " FROM (" +
+                        " SELECT " + APIUsageStatisticsClientConstants.API + "," +
+                        "apiPublisher" + "," + "MAX(" + APIUsageStatisticsClientConstants.TIME + ")" +
+                        "AS maxTime FROM " + tableName + " GROUP BY " +
+                        APIUsageStatisticsClientConstants.API + ",apiPublisher) maxTimesTable INNER JOIN " +
+                        " (SELECT " +
+                        APIUsageStatisticsClientConstants.API + "," +
+                        APIUsageStatisticsClientConstants.VERSION + "," +
+                        APIUsageStatisticsClientConstants.CONTEXT + "," +
+                        "apiPublisher" + "," +
+                        APIUsageStatisticsClientConstants.REQUEST_TIME + "," +
+                        APIUsageStatisticsClientConstants.TIME + "," +
+                        APIUsageStatisticsClientConstants.USER_ID +
+                        " FROM " + tableName + ")" +
+                        dataTableName + " ON " +
+                        maxTimesTable + "." + APIUsageStatisticsClientConstants.API + "=" +
+                        dataTableName + "." + APIUsageStatisticsClientConstants.API + " AND " +
+                        maxTimesTable + "." + "apiPublisher" + "=" + dataTableName + "." + "apiPublisher" + " AND " +
+                        maxTimesTable + "." + "maxTime=" + dataTableName + "." + APIUsageStatisticsClientConstants.TIME;
+
+                resultSet = statement.executeQuery(query);
+            }
 
             while (resultSet.next()) {
                 String apiName = resultSet.getString(APIUsageStatisticsClientConstants.API);
