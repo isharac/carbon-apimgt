@@ -1263,6 +1263,10 @@ public class APIUsageStatisticsClient {
 
         Collection<APIAccessTime> accessTimes = getLastAccessData(
                 APIUsageStatisticsClientConstants.API_VERSION_KEY_LAST_ACCESS_SUMMARY, providerName);
+
+        if (providerName.startsWith(APIUsageStatisticsClientConstants.ALL_PROVIDERS)) {
+            providerName = APIUsageStatisticsClientConstants.ALL_PROVIDERS;
+        }
         List<API> providerAPIs = getAPIsByProvider(providerName);
 
         List<APIVersionLastAccessTimeDTO> accessTimeByAPI = new ArrayList<APIVersionLastAccessTimeDTO>();
@@ -1321,14 +1325,14 @@ public class APIUsageStatisticsClient {
                             + APIUsageStatisticsClientConstants.REQUEST_TIME + " FROM "
                             + APIUsageStatisticsClientConstants.API_LAST_ACCESS_TIME_SUMMARY);
 
-            lastAccessQuery.append(" where tenantDomain= \"" + tenantDomain + "\"");
+            lastAccessQuery.append(" where tenantDomain= \'" + tenantDomain + "\'");
 
             if (!providerName.startsWith(APIUsageStatisticsClientConstants.ALL_PROVIDERS)) {
                 lastAccessQuery
-                        .append(" AND (" + APIUsageStatisticsClientConstants.API_PUBLISHER_THROTTLE_TABLE + "= \""
-                                + providerName + "\" OR "
-                                + APIUsageStatisticsClientConstants.API_PUBLISHER_THROTTLE_TABLE + "= \"" + APIUtil
-                                .getUserNameWithTenantSuffix(providerName) + "\")");
+                        .append(" AND (" + APIUsageStatisticsClientConstants.API_PUBLISHER_THROTTLE_TABLE + "= \'"
+                                + providerName + "\' OR "
+                                + APIUsageStatisticsClientConstants.API_PUBLISHER_THROTTLE_TABLE + "= \'" + APIUtil
+                                .getUserNameWithTenantSuffix(providerName) + "\')");
             }
 
             lastAccessQuery.append(" order by " + APIUsageStatisticsClientConstants.REQUEST_TIME + " DESC");
