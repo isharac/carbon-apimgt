@@ -1297,7 +1297,7 @@ public class APIUsageStatisticsClient {
      * @return a collection containing the data related to API last access times
      * @throws APIMgtUsageQueryServiceClientException if an error occurs while querying the database
      */
-    private Collection<APIAccessTime> getLastAccessData(String tableName,String providerName)
+    private Collection<APIAccessTime> getLastAccessData(String tableName, String providerName)
             throws APIMgtUsageQueryServiceClientException {
 
         Connection connection = null;
@@ -1320,13 +1320,15 @@ public class APIUsageStatisticsClient {
                             + APIUsageStatisticsClientConstants.USER_ID + ","
                             + APIUsageStatisticsClientConstants.REQUEST_TIME + " FROM "
                             + APIUsageStatisticsClientConstants.API_LAST_ACCESS_TIME_SUMMARY);
-            if (providerName.startsWith(APIUsageStatisticsClientConstants.ALL_PROVIDERS)) {
-                lastAccessQuery.append(" where tenantDomain= \"" + tenantDomain + "\"");
-            } else {
-                providerName = APIUtil.getUserNameWithTenantSuffix(providerName);
+
+            lastAccessQuery.append(" where tenantDomain= \"" + tenantDomain + "\"");
+
+            if (!providerName.startsWith(APIUsageStatisticsClientConstants.ALL_PROVIDERS)) {
                 lastAccessQuery
-                        .append(" where " + APIUsageStatisticsClientConstants.API_PUBLISHER_THROTTLE_TABLE + "= \""
-                                + providerName + "\"");
+                        .append(" AND (" + APIUsageStatisticsClientConstants.API_PUBLISHER_THROTTLE_TABLE + "= \""
+                                + providerName + "\" OR "
+                                + APIUsageStatisticsClientConstants.API_PUBLISHER_THROTTLE_TABLE + "= \"" + APIUtil
+                                .getUserNameWithTenantSuffix(providerName) + "\")");
             }
 
             lastAccessQuery.append(" order by " + APIUsageStatisticsClientConstants.REQUEST_TIME + " DESC");
