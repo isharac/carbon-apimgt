@@ -1337,14 +1337,19 @@ public class APIUsageStatisticsClient {
 
             lastAccessQuery.append(" order by " + APIUsageStatisticsClientConstants.REQUEST_TIME + " DESC");
 
-            //try to get data from table API_LAST_ACCESS_TIME_SUMMARY
-            try {
-                resultSet = statement.executeQuery(lastAccessQuery.toString());
-                //if succeed set the flag as true
-                succeed = true;
-            } catch (SQLException e) {
-                log.warn(
-                        "Error read data from Table " + APIUsageStatisticsClientConstants.API_LAST_ACCESS_TIME_SUMMARY);
+            //check if the __all_providers__ had tenant domain, if not try old version
+            if (!providerName.startsWith(APIUsageStatisticsClientConstants.ALL_PROVIDERS) || (
+                    providerName.startsWith(APIUsageStatisticsClientConstants.ALL_PROVIDERS)
+                            && providerName.indexOf('@') > 0)) {
+                //try to get data from table API_LAST_ACCESS_TIME_SUMMARY
+                try {
+                    resultSet = statement.executeQuery(lastAccessQuery.toString());
+                    //if succeed set the flag as true
+                    succeed = true;
+                } catch (SQLException e) {
+                    log.warn("Error read data from Table "
+                            + APIUsageStatisticsClientConstants.API_LAST_ACCESS_TIME_SUMMARY);
+                }
             }
 
             //if the data reading from API_LAST_ACCESS_TIME_SUMMARY didn't work try the old code
