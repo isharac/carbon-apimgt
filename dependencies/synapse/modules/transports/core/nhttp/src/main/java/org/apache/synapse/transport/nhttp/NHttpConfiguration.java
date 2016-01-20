@@ -73,6 +73,8 @@ public final class NHttpConfiguration {
     private static NHttpConfiguration _instance = new NHttpConfiguration();
     private Properties props;
     List<String> methods;
+    //Preserve HTTP headers
+    private List<String> preserveHeaders;
 
     /** Comma separated list of blocked uris*/
     public static final String BLOCK_SERVICE_LIST = "http.block_service_list";
@@ -142,14 +144,19 @@ public final class NHttpConfiguration {
         return getProperty(NhttpConstants.DISABLE_KEEPALIVE, 0) == 1;
     }
 
-    public boolean isPreserveUserAgentHeader() {
-        return getBooleanValue(NhttpConstants.USER_AGENT_HEADER_PRESERVE, false);
+    /**
+     * Check preserving status of the http header field
+     *
+     * @param httpHeader http header name
+     * @return return true if preserve else false
+     */
+    public boolean isPreserveHttpHeader(String httpHeader) {
+        if (preserveHeaders == null || preserveHeaders.isEmpty() || httpHeader == null) {
+            return false;
+        } else {
+            return preserveHeaders.contains(httpHeader.toUpperCase());
+        }
     }
-
-    public boolean isPreserveServerHeader() {
-        return getBooleanValue(NhttpConstants.SERVER_HEADER_PRESERVE, true);
-    }
-
     public boolean isCountConnections() {
         return getBooleanValue(NhttpConstants.COUNT_CONNECTIONS, false);
     }
