@@ -3537,20 +3537,14 @@ public class APIStoreHostObject extends ScriptableObject {
             String name = (String) args[0];
             String username = (String) args[1];
             String groupingId = (String) args[2];
-            Subscriber subscriber = new Subscriber(username);
             APIConsumer apiConsumer = getAPIConsumer(thisObj);
-            Application[] apps;
-           	apps = apiConsumer.getApplications(subscriber, groupingId);
-            
-            if (apps == null || apps.length == 0) {
-                return false;
+            Application app = apiConsumer.getApplicationsByName(username, name, groupingId);
+            if (app != null) {
+                apiConsumer.removeApplication(app);
+            } else {
+                handleException("Application " + name + " doesn't exists");
             }
-            for (Application app : apps) {
-                if (app.getName().equals(name)) {
-                    apiConsumer.removeApplication(app);
-                    return true;
-                }
-            }
+            return true;
         }
         return false;
     }
@@ -3622,36 +3616,32 @@ public class APIStoreHostObject extends ScriptableObject {
             if(args.length > 6 && args[6] != null){
                 groupingId = (String) args[6];
             }
-           
-            Subscriber subscriber = new Subscriber(username);
+
             APIConsumer apiConsumer = getAPIConsumer(thisObj);
-            Application[] apps;
-           	apps = apiConsumer.getApplications(subscriber, groupingId);
-           if (apps == null || apps.length == 0) {
-                return false;
-            }
-
-            Map appsMap = new HashMap();
-            for (Application app : apps) {
-                appsMap.put(app.getName(), app);
-            }
-            
-            // check whether there is an app with same name
-            if (!newName.equals(oldName) && appsMap.containsKey(newName)) {
-                handleException("An application already exist by the name " + newName);
-            }
-
-            for (Application app : apps) {
-                if (app.getName().equals(oldName)) {
-                    Application application = new Application(newName, subscriber);
-                    application.setId(app.getId());
-                    application.setTier(tier);
-                    application.setCallbackUrl(callbackUrl);
-                    application.setDescription(description);
-                    apiConsumer.updateApplication(application);
-                    return true;
+            // get application with new name if exists
+            Application application = apiConsumer.getApplicationsByName(username, newName, groupingId);
+            if (!newName.equals(oldName)) {
+                // check whether there is an app with new name and throw error if exists
+                if (application != null) {
+                    handleException("An application already exist by the name " + newName);
+                } else {
+                    // get the application by old name
+                    application = apiConsumer.getApplicationsByName(username, oldName, groupingId);
+                    if(application == null) {
+                        handleException("Application " + oldName + " doesn't exists");
+                    }
                 }
             }
+
+            // update application details
+            Subscriber subscriber = new Subscriber(username);
+            Application updatedApplication = new Application(newName, subscriber);
+            updatedApplication.setId(application.getId());
+            updatedApplication.setTier(tier);
+            updatedApplication.setCallbackUrl(callbackUrl);
+            updatedApplication.setDescription(description);
+            apiConsumer.updateApplication(updatedApplication);
+            return true;
         }
 
         return false;
