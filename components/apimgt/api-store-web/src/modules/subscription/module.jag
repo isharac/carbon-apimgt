@@ -15,6 +15,10 @@ jagg.module("subscription", {
         return jagg.require(jagg.getModulesDir() + "subscription/list.jag").getAllSubscriptions.apply(this, arguments);
     },
 
+    getAllSubscriptionsOfApplication:function () {
+        return jagg.require(jagg.getModulesDir() + "subscription/list.jag").getAllSubscriptionsOfApplication.apply(this, arguments);
+    },
+
     getAPISubscriptions:function () {
         return jagg.require(jagg.getModulesDir() + "subscription/list.jag").getAPISubscriptions.apply(this, arguments);
     },
