@@ -2967,10 +2967,9 @@ public class APIStoreHostObject extends ScriptableObject {
 		return prodKeyScope;
 	}
 
-    public static NativeObject jsFunction_getAllSubscriptions(Context cx,
-                                                              Scriptable thisObj, Object[] args, Function funObj)
+    private static NativeObject getAllSubscriptions(Context cx, Scriptable thisObj, Object[] args, Function funObj,
+                                                    boolean isFirstOnly)
             throws ScriptException, APIManagementException, ApplicationNotFoundException {
-
         if (args == null || args.length == 0 || !isStringArray(args)) {
             return null;
         }
@@ -3005,9 +3004,9 @@ public class APIStoreHostObject extends ScriptableObject {
 
             //check whether application exist prior to get subscriptions
             if (!(appName == null || appName.isEmpty()) &&
-                    !APIUtil.isApplicationExist(username, appName, groupingId)) {
+                !APIUtil.isApplicationExist(username, appName, groupingId)) {
                 String message = "Application " + appName + " does not exist for user " +
-                        "" + username;
+                                 "" + username;
                 log.error(message);
                 throw new ApplicationNotFoundException(message);
             }
@@ -3030,7 +3029,8 @@ public class APIStoreHostObject extends ScriptableObject {
                     Set<Scope> scopeSet = new LinkedHashSet<Scope>();
                     NativeArray scopesArray = new NativeArray(0);
 
-                    if (((appName == null || appName.isEmpty()) && i == 0) ||
+//                    if (((appName == null || appName.isEmpty()) && i == 0) ||
+                    if (((appName == null || appName.isEmpty()) && !(isFirstOnly && i > 0)) ||
                         appName.equals(application.getName())) {
 
                         //get Number of subscriptions for the given application by the subscriber.
@@ -3158,13 +3158,11 @@ public class APIStoreHostObject extends ScriptableObject {
                         OAuthApplicationInfo sandApp = application.getOAuthApp("SANDBOX");
                         boolean sandEnableRegenarateOption = true;
 
-
                         String sandKeyScope = "";
                         if (sandboxKey != null && sandboxKey.getTokenScope() != null) {
                             //convert scope keys to names
                             sandKeyScope = getScopeNamesbyKey(sandboxKey.getTokenScope(), scopeSet);
                         }
-
 
                         if (sandboxKey != null && sandboxKey.getConsumerKey() != null && sandApp != null) {
                             String jsonString = sandApp.getJsonString();
@@ -3231,7 +3229,6 @@ public class APIStoreHostObject extends ScriptableObject {
                             }
                         }
 
-
                         if (appName == null || appName.isEmpty() || appName.equals(application.getName())) {
 
                             startLoop = 0;
@@ -3266,6 +3263,18 @@ public class APIStoreHostObject extends ScriptableObject {
         }
 
         return result;
+    }
+
+    public static NativeObject jsFunction_getAllSubscriptionsOfApplication(Context cx,
+                                                              Scriptable thisObj, Object[] args, Function funObj)
+            throws ScriptException, APIManagementException, ApplicationNotFoundException {
+        return getAllSubscriptions(cx, thisObj, args, funObj, true);
+    }
+
+    public static NativeObject jsFunction_getAllSubscriptions(Context cx,
+                                                              Scriptable thisObj, Object[] args, Function funObj)
+            throws ScriptException, APIManagementException, ApplicationNotFoundException {
+        return getAllSubscriptions(cx, thisObj, args, funObj, false);
     }
 
     private static void addAPIObj(SubscribedAPI subscribedAPI, NativeArray apisArray,
