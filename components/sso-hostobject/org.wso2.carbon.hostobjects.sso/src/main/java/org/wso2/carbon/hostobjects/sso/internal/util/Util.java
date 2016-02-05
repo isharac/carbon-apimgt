@@ -37,6 +37,7 @@ import org.opensaml.xml.io.Unmarshaller;
 import org.opensaml.xml.io.UnmarshallerFactory;
 import org.opensaml.xml.signature.SignatureValidator;
 import org.opensaml.xml.util.Base64;
+import org.opensaml.xml.validation.ValidationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -46,6 +47,8 @@ import org.w3c.dom.ls.LSOutput;
 import org.w3c.dom.ls.LSSerializer;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.core.util.KeyStoreManager;
+import org.wso2.carbon.hostobjects.sso.SignatureVerificationException;
+import org.wso2.carbon.hostobjects.sso.SignatureVerificationFailure;
 import org.wso2.carbon.hostobjects.sso.internal.SSOConstants;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
@@ -53,11 +56,11 @@ import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
+import java.io.*;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -235,7 +238,8 @@ public class Util {
      */
     public static boolean validateSignature(Response resp, String keyStoreName,
                                             String keyStorePassword, String alias, int tenantId,
-                                            String tenantDomain) {
+                                            String tenantDomain) throws SignatureVerificationException,
+                                                                        SignatureVerificationFailure {
         boolean isSigValid = false;
         try {
             KeyStore keyStore = null;
@@ -258,9 +262,30 @@ public class Util {
             signatureValidator.validate(resp.getSignature());
             isSigValid = true;
             return isSigValid;
+        } catch (KeyStoreException e) {
+            log.error("Error when getting certificate of tenant " + tenantDomain, e);
+            throw new SignatureVerificationException(e);
+        } catch (CertificateException e) {
+            log.error("Could not load the keystore " + keyStoreName, e);
+            throw new SignatureVerificationException(e);
+        } catch (NoSuchAlgorithmException e) {
+            log.error("Could not load the keystore " + keyStoreName, e);
+            throw new SignatureVerificationException(e);
+        } catch (FileNotFoundException e) {
+            log.error("Could not find the key store file " + keyStoreName, e);
+            throw new SignatureVerificationException(e);
+        } catch (IOException e) {
+            log.error("Could not load the keystore " + keyStoreName, e);
+            throw new SignatureVerificationException(e);
+        } catch (ValidationException e) {
+            //Do not log the exception here. Clients of this method use it in a fall back fashion to verify signatures
+            //using different public keys. Therefore logging an error would cause unnecessary logs. Throwing an
+            //exception is sufficient so that clients can decide what to do with it.
+            throw new SignatureVerificationFailure(e);
         } catch (Exception e) {
-            log.warn("Signature verification is failed for " + tenantDomain, e);
-            return isSigValid;
+            //keyStoreManager.getKeyStore throws a generic 'Exception'
+            log.error("Error when getting key store of tenant " + tenantDomain, e);
+            throw new SignatureVerificationException(e);
         }
     }
 
