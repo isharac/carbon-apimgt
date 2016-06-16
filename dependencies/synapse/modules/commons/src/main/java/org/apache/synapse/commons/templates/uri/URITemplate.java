@@ -26,6 +26,7 @@ import java.util.Map;
 public class URITemplate {
 
     private Node syntaxTree;
+    private boolean allowOptionalQuery;
 
     public URITemplate(String template) throws URITemplateException {
         if (!"/".equals(template) && template.endsWith("/")) {
@@ -33,16 +34,30 @@ public class URITemplate {
         }
         URITemplateParser parser = new URITemplateParser();
         syntaxTree = parser.parse(template);
+        allowOptionalQuery = !syntaxTree.hasQueryTemplate();
     }
 
-    public String expand(Map<String,String> variables) {
+    public String expand(Map<String, String> variables) {
         return null;
     }
 
-    public boolean matches(String uri, Map<String,String> variables) {
+    public boolean matches(String uri, Map<String, String> variables) {
         /* if (uri.endsWith("/") && uri.length() > 1) {
             uri = uri.substring(0, uri.length() - 1);
         } */
-        return syntaxTree.matchAll(uri, variables) == uri.length();
+
+        int matchLength = syntaxTree.matchAll(uri, variables);
+        if (matchLength == uri.length()) {
+            return true;
+        }
+
+        // The following logic was put in to support ESBJAVA-4260
+        // If the pattern do not contain a query segment we would accept optional query parameters
+
+        if (allowOptionalQuery && matchLength > 0 && '?' == uri.charAt(matchLength)) {
+            return true;
+        }
+
+        return false;
     }
 }

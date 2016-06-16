@@ -24,6 +24,7 @@ public abstract class Node {
 
     protected String token;
     protected Node next;
+    protected boolean hasQueryTemplate = false;
 
     protected Node(String token) {
         this.token = token;
@@ -33,7 +34,7 @@ public abstract class Node {
         this.next = next;
     }
 
-    public String expandAll(Map<String,String> variables) {
+    public String expandAll(Map<String, String> variables) {
         StringBuilder builder = new StringBuilder();
         Node currentNode = this;
         while (currentNode != null) {
@@ -55,31 +56,35 @@ public abstract class Node {
                 // We have more content in the URI to match
                 // But there aren't any nodes left to match against
                 // return -1;
-                if(uriFragment.endsWith("/")){
-                    matchLength = matchLength +1;
+                if (uriFragment.endsWith("/")) {
+                    matchLength = matchLength + 1;
                 }
                 return matchLength;
             }
         } else if (matchLength == uriFragment.length() && next != null) {
-            if(next.getToken().equalsIgnoreCase("*"))
-            {
+            if (next.getToken().equalsIgnoreCase("*")) {
                 return matchLength;
             }
-            if(next.getToken().equalsIgnoreCase("/*"))
-            {
+            if (next.getToken().equalsIgnoreCase("/*")) {
                 return matchLength;
             }
             // We have matched all the characters in the URI
             // But there are some nodes left to be matched against
             return -1;
-        }
-        else {
+        } else {
             return matchLength;
         }
     }
 
-    abstract String expand(Map<String,String> variables);
-    abstract int match(String uriFragment, Map<String,String> variables);
+    public boolean hasQueryTemplate() {
+        return (next != null) ? hasQueryTemplate || next.hasQueryTemplate() : hasQueryTemplate;
+    }
+
+    abstract String expand(Map<String, String> variables);
+
+    abstract int match(String uriFragment, Map<String, String> variables);
+
     abstract String getToken();
+
     abstract char getFirstCharacter();
 }
