@@ -514,7 +514,7 @@ public class SynapseXPath extends SynapsePath {
         }
     }
 
-    public String evaluateDOMXPath(MessageContext synCtx) throws XPathExpressionException {
+    public synchronized String evaluateDOMXPath(MessageContext synCtx) throws XPathExpressionException {
 
         OMElement element = synCtx.getEnvelope().getBody().getFirstElement();
         OMElement doomElement;

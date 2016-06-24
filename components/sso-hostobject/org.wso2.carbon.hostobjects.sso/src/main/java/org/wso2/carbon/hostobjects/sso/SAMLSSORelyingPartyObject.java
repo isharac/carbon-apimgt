@@ -114,10 +114,8 @@ public class SAMLSSORelyingPartyObject extends ScriptableObject {
      * @return
      * @throws Exception
      */
-    public static boolean jsFunction_validateSignature(Context cx, Scriptable thisObj,
-                                                       Object[] args,
-                                                       Function funObj)
-            throws Exception {
+    public static boolean jsFunction_validateSignature(Context cx, Scriptable thisObj, Object[] args, Function funObj)
+                                                                                                throws Exception {
 
         int argLength = args.length;
         if (argLength != 1 || !(args[0] instanceof String)) {
@@ -135,20 +133,33 @@ public class SAMLSSORelyingPartyObject extends ScriptableObject {
             Response samlResponse = (Response) samlObject;
             SAMLSSORelyingPartyObject relyingPartyObject = (SAMLSSORelyingPartyObject) thisObj;
 
-            //Try and validate the signature using the super tenant key store.
-            boolean sigValid = Util.validateSignature(samlResponse,
-                    relyingPartyObject.getSSOProperty(SSOConstants.KEY_STORE_NAME),
-                    relyingPartyObject.getSSOProperty(SSOConstants.KEY_STORE_PASSWORD),
-                    relyingPartyObject.getSSOProperty(SSOConstants.IDP_ALIAS),
-                    MultitenantConstants.SUPER_TENANT_ID, MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-
-            //If not success, try and validate the signature using tenant key store.
-            if(!sigValid && !MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(tenantDomain)){
+            boolean sigValid = false;
+            try {
+                //Try and validate the signature using the super tenant key store.
                 sigValid = Util.validateSignature(samlResponse,
                         relyingPartyObject.getSSOProperty(SSOConstants.KEY_STORE_NAME),
                         relyingPartyObject.getSSOProperty(SSOConstants.KEY_STORE_PASSWORD),
                         relyingPartyObject.getSSOProperty(SSOConstants.IDP_ALIAS),
-                        tenantId, tenantDomain);
+                        MultitenantConstants.SUPER_TENANT_ID, MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+            }catch(SignatureVerificationFailure e){
+                //do nothing at this point since we want to verify signature using the tenant key-store as well.
+                if(log.isDebugEnabled()){
+                    log.debug("Signature verification failed with Super-Tenant Key Store");
+                }
+            }
+
+            //If not success, try and validate the signature using tenant key store.
+            if (!sigValid && !MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(tenantDomain)) {
+                try {
+                    sigValid = Util.validateSignature(samlResponse,
+                            relyingPartyObject.getSSOProperty(SSOConstants.KEY_STORE_NAME),
+                            relyingPartyObject.getSSOProperty(SSOConstants.KEY_STORE_PASSWORD),
+                            relyingPartyObject.getSSOProperty(SSOConstants.IDP_ALIAS),
+                            tenantId, tenantDomain);
+                } catch (SignatureVerificationFailure e) {
+                    log.error("Signature Verification Failed using super tenant and tenant key stores", e);
+                    return false;
+                }
             }
             return sigValid;
         }
@@ -1138,7 +1149,15 @@ public class SAMLSSORelyingPartyObject extends ScriptableObject {
                 if (sessionList != null) {
                     for (SessionHostObject session : sessionList) {
                         if (SessionHostObject.jsFunction_getId(null, session, args, null) != null) {
-                            SessionHostObject.jsFunction_invalidate(null, session, args, null);
+                            try {
+                                SessionHostObject.jsFunction_invalidate(null, session, args, null);
+                            } catch (Exception ex){
+                                if(ex.getMessage().contains("Session already invalidated")){ // can be ignored
+                                    log.debug(ex.getMessage());
+                                } else {
+                                    throw ex;
+                                }
+                            }
                         }
                     }
                 }
@@ -1146,6 +1165,9 @@ public class SAMLSSORelyingPartyObject extends ScriptableObject {
             removeSession(sessionIndex);
             clearSessionsSet();
         } catch (Exception ignored) {
+            if (log.isDebugEnabled()) {
+	        log.debug(ignored.getMessage());
+            }
             removeSession(sessionIndex);
             clearSessionsSet();
         }

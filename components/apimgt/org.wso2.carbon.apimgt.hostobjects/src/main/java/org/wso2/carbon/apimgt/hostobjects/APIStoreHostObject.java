@@ -730,18 +730,16 @@ public class APIStoreHostObject extends ScriptableObject {
 
 	            //checking for authorized scopes
 	            Set<Scope> scopeSet = new LinkedHashSet<Scope>();
-	            List<Scope> authorizedScopes = new ArrayList<Scope>();
 	            String authScopeString;
 	            APIConsumer apiConsumer = getAPIConsumer(thisObj);
 	            if (scopes != null && scopes.length() != 0 &&
 	                !scopes.equals(APIConstants.OAUTH2_DEFAULT_SCOPE)) {
 		            scopeSet.addAll(apiConsumer.getScopesByScopeKeys(scopes, tenantId));
-		            authorizedScopes = getAllowedScopesForUserApplication(username, scopeSet);
 	            }
 
-	            if (!authorizedScopes.isEmpty()) {
+	            if (!scopeSet.isEmpty()) {
 		            StringBuilder scopeBuilder = new StringBuilder();
-		            for (Scope scope : authorizedScopes) {
+		            for (Scope scope : scopeSet) {
 			            scopeBuilder.append(scope.getKey()).append(" ");
 		            }
 		            authScopeString = scopeBuilder.toString();
@@ -997,18 +995,16 @@ public class APIStoreHostObject extends ScriptableObject {
 
                 //checking for authorized scopes
                 Set<Scope> scopeSet = new LinkedHashSet<Scope>();
-                List<Scope> authorizedScopes = new ArrayList<Scope>();
                 String authScopeString;
                 APIConsumer apiConsumer = getAPIConsumer(thisObj);
                 if (scopes != null && scopes.length() != 0 &&
                     !scopes.equals(APIConstants.OAUTH2_DEFAULT_SCOPE)) {
                     scopeSet.addAll(apiConsumer.getScopesByScopeKeys(scopes, tenantId));
-                    authorizedScopes = getAllowedScopesForUserApplication(username, scopeSet);
                 }
 
-                if (!authorizedScopes.isEmpty()) {
+                if (!scopeSet.isEmpty()) {
                     StringBuilder scopeBuilder = new StringBuilder();
-                    for (Scope scope : authorizedScopes) {
+                    for (Scope scope : scopeSet) {
                         scopeBuilder.append(scope.getKey()).append(" ");
                     }
                     authScopeString = scopeBuilder.toString();
@@ -1210,7 +1206,6 @@ public class APIStoreHostObject extends ScriptableObject {
             } else {
                 usernameWithDomain = usernameWithDomain + "@" + tenantDomain;
             }
-
             boolean authorized =
                     APIUtil.checkPermissionQuietly(usernameWithDomain, APIConstants.Permissions.API_SUBSCRIBE);
             boolean displayPublishUrlFromStore = false;
@@ -2895,46 +2890,6 @@ public class APIStoreHostObject extends ScriptableObject {
         }
     }
 
-	private static List<Scope> getAllowedScopesForUserApplication(String username,
-	                                                              Set<Scope> reqScopeSet) {
-        String[] userRoles = null;
-        org.wso2.carbon.user.api.UserStoreManager userStoreManager = null;
-
-        List<Scope> authorizedScopes = new ArrayList<Scope>();
-        try {
-            RealmService realmService = ServiceReferenceHolder.getInstance().getRealmService();
-            int tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager()
-                                                 .getTenantId(MultitenantUtils.getTenantDomain(username));
-            userStoreManager = realmService.getTenantUserRealm(tenantId).getUserStoreManager();
-            userRoles = userStoreManager.getRoleListOfUser(MultitenantUtils.getTenantAwareUsername(username));
-        } catch (org.wso2.carbon.user.api.UserStoreException e) {
-            // Log and return since we do not want to stop issuing the token in
-            // case of scope validation failures.
-            log.error("Error when getting the tenant's UserStoreManager or when getting roles of user ", e);
-        }
-
-		List<String> userRoleList = new ArrayList<String>(Arrays.asList(userRoles));
-
-		//Iterate the requested scopes list.
-		for (Scope scope : reqScopeSet) {
-			//Get the set of roles associated with the requested scope.
-			String roles = scope.getRoles();
-
-			//If the scope has been defined in the context of the App and if roles have been defined for the scope
-			if (roles != null && roles.length() != 0) {
-				List<String> roleList =
-						new ArrayList<String>(Arrays.asList(roles.replaceAll(" ", "").split(",")));
-				//Check if user has at least one of the roles associated with the scope
-				roleList.retainAll(userRoleList);
-				if (!roleList.isEmpty()) {
-					authorizedScopes.add(scope);
-				}
-			}
-		}
-
-		return authorizedScopes;
-	}
-
 	private static String getScopeNamesbyKey(String scopeKey, Set<Scope> availableScopeSet) {
 		//convert scope keys to names
 		StringBuilder scopeBuilder = new StringBuilder("");
@@ -2967,10 +2922,9 @@ public class APIStoreHostObject extends ScriptableObject {
 		return prodKeyScope;
 	}
 
-    public static NativeObject jsFunction_getAllSubscriptions(Context cx,
-                                                              Scriptable thisObj, Object[] args, Function funObj)
+    private static NativeObject getAllSubscriptions(Context cx, Scriptable thisObj, Object[] args, Function funObj,
+                                                    boolean isFirstOnly)
             throws ScriptException, APIManagementException, ApplicationNotFoundException {
-
         if (args == null || args.length == 0 || !isStringArray(args)) {
             return null;
         }
@@ -3005,9 +2959,9 @@ public class APIStoreHostObject extends ScriptableObject {
 
             //check whether application exist prior to get subscriptions
             if (!(appName == null || appName.isEmpty()) &&
-                    !APIUtil.isApplicationExist(username, appName, groupingId)) {
+                !APIUtil.isApplicationExist(username, appName, groupingId)) {
                 String message = "Application " + appName + " does not exist for user " +
-                        "" + username;
+                                 "" + username;
                 log.error(message);
                 throw new ApplicationNotFoundException(message);
             }
@@ -3030,7 +2984,8 @@ public class APIStoreHostObject extends ScriptableObject {
                     Set<Scope> scopeSet = new LinkedHashSet<Scope>();
                     NativeArray scopesArray = new NativeArray(0);
 
-                    if (((appName == null || appName.isEmpty()) && i == 0) ||
+//                    if (((appName == null || appName.isEmpty()) && i == 0) ||
+                    if (((appName == null || appName.isEmpty()) && !(isFirstOnly && i > 0)) ||
                         appName.equals(application.getName())) {
 
                         //get Number of subscriptions for the given application by the subscriber.
@@ -3158,13 +3113,11 @@ public class APIStoreHostObject extends ScriptableObject {
                         OAuthApplicationInfo sandApp = application.getOAuthApp("SANDBOX");
                         boolean sandEnableRegenarateOption = true;
 
-
                         String sandKeyScope = "";
                         if (sandboxKey != null && sandboxKey.getTokenScope() != null) {
                             //convert scope keys to names
                             sandKeyScope = getScopeNamesbyKey(sandboxKey.getTokenScope(), scopeSet);
                         }
-
 
                         if (sandboxKey != null && sandboxKey.getConsumerKey() != null && sandApp != null) {
                             String jsonString = sandApp.getJsonString();
@@ -3231,7 +3184,6 @@ public class APIStoreHostObject extends ScriptableObject {
                             }
                         }
 
-
                         if (appName == null || appName.isEmpty() || appName.equals(application.getName())) {
 
                             startLoop = 0;
@@ -3266,6 +3218,18 @@ public class APIStoreHostObject extends ScriptableObject {
         }
 
         return result;
+    }
+
+    public static NativeObject jsFunction_getAllSubscriptionsOfApplication(Context cx,
+                                                              Scriptable thisObj, Object[] args, Function funObj)
+            throws ScriptException, APIManagementException, ApplicationNotFoundException {
+        return getAllSubscriptions(cx, thisObj, args, funObj, true);
+    }
+
+    public static NativeObject jsFunction_getAllSubscriptions(Context cx,
+                                                              Scriptable thisObj, Object[] args, Function funObj)
+            throws ScriptException, APIManagementException, ApplicationNotFoundException {
+        return getAllSubscriptions(cx, thisObj, args, funObj, false);
     }
 
     private static void addAPIObj(SubscribedAPI subscribedAPI, NativeArray apisArray,
@@ -3537,20 +3501,14 @@ public class APIStoreHostObject extends ScriptableObject {
             String name = (String) args[0];
             String username = (String) args[1];
             String groupingId = (String) args[2];
-            Subscriber subscriber = new Subscriber(username);
             APIConsumer apiConsumer = getAPIConsumer(thisObj);
-            Application[] apps;
-           	apps = apiConsumer.getApplications(subscriber, groupingId);
-            
-            if (apps == null || apps.length == 0) {
-                return false;
+            Application app = apiConsumer.getApplicationsByName(username, name, groupingId);
+            if (app != null) {
+                apiConsumer.removeApplication(app);
+            } else {
+                handleException("Application " + name + " doesn't exists");
             }
-            for (Application app : apps) {
-                if (app.getName().equals(name)) {
-                    apiConsumer.removeApplication(app);
-                    return true;
-                }
-            }
+            return true;
         }
         return false;
     }
@@ -3622,36 +3580,32 @@ public class APIStoreHostObject extends ScriptableObject {
             if(args.length > 6 && args[6] != null){
                 groupingId = (String) args[6];
             }
-           
-            Subscriber subscriber = new Subscriber(username);
+
             APIConsumer apiConsumer = getAPIConsumer(thisObj);
-            Application[] apps;
-           	apps = apiConsumer.getApplications(subscriber, groupingId);
-           if (apps == null || apps.length == 0) {
-                return false;
-            }
-
-            Map appsMap = new HashMap();
-            for (Application app : apps) {
-                appsMap.put(app.getName(), app);
-            }
-            
-            // check whether there is an app with same name
-            if (!newName.equals(oldName) && appsMap.containsKey(newName)) {
-                handleException("An application already exist by the name " + newName);
-            }
-
-            for (Application app : apps) {
-                if (app.getName().equals(oldName)) {
-                    Application application = new Application(newName, subscriber);
-                    application.setId(app.getId());
-                    application.setTier(tier);
-                    application.setCallbackUrl(callbackUrl);
-                    application.setDescription(description);
-                    apiConsumer.updateApplication(application);
-                    return true;
+            // get application with new name if exists
+            Application application = apiConsumer.getApplicationsByName(username, newName, groupingId);
+            if (!newName.equals(oldName)) {
+                // check whether there is an app with new name and throw error if exists
+                if (application != null) {
+                    handleException("An application already exist by the name " + newName);
+                } else {
+                    // get the application by old name
+                    application = apiConsumer.getApplicationsByName(username, oldName, groupingId);
+                    if(application == null) {
+                        handleException("Application " + oldName + " doesn't exists");
+                    }
                 }
             }
+
+            // update application details
+            Subscriber subscriber = new Subscriber(username);
+            Application updatedApplication = new Application(newName, subscriber);
+            updatedApplication.setId(application.getId());
+            updatedApplication.setTier(tier);
+            updatedApplication.setCallbackUrl(callbackUrl);
+            updatedApplication.setDescription(description);
+            apiConsumer.updateApplication(updatedApplication);
+            return true;
         }
 
         return false;
