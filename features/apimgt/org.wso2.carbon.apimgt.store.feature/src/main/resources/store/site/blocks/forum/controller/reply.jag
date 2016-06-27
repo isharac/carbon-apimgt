@@ -49,8 +49,7 @@ if (uri != null) {
 
 if (action == "exit") {
     response.sendError(404);
-}
-else {
+} else {
 var user = jagg.getUser();
 var storeForum = Packages.org.wso2.carbon.forum.registry.RegistryForumManager;
 var forum = new storeForum();

@@ -10,7 +10,7 @@ var log = new Log();
 
 // routing logic
 var uri = request.getRequestURI();
-var callPath=uri.replace("/store","");
+var callPath = uri.replace("/store", "");
 
 var action = "list"; // default action list the topics
 if(uri != null) {
@@ -33,7 +33,7 @@ if(uri != null) {
     }
 }
 
-if(action == "exit"){
+if (action == "exit") {
     response.sendError(404);
 } else {
 include("header.jag");

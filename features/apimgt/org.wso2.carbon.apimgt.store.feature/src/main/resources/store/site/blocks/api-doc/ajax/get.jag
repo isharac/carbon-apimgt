@@ -43,7 +43,7 @@ var log = new Log();
             action = "exit";
         }
 
-        if (action == "exit"){
+        if (action == "exit") {
             response.sendError(404);
         } else {
         var url = request.getRequestURL();
