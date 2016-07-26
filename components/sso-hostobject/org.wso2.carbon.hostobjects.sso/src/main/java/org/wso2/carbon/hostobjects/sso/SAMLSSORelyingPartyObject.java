@@ -555,18 +555,12 @@ public class SAMLSSORelyingPartyObject extends ScriptableObject {
             // Check for duplicate saml:Response
             NodeList list = samlResponse.getDOM().getElementsByTagNameNS(SAMLConstants.SAML20P_NS, "Response");
             if (list.getLength() > 0) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Invalid schema for the SAML2 response.");
-                }
                 log.error("Invalid schema for the SAML2 response.");
                 return null;
             }
             //Check for duplicate saml:assertions
             NodeList assertionList = samlResponse.getDOM().getElementsByTagNameNS(SAMLConstants.SAML20_NS, "Assertion");
             if (assertionList.getLength() > 1) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Invalid schema for the SAML2 response. Multiple assertions detected");
-                }
                 log.error("Invalid schema for the SAML2 response. Multiple assertions detected.");
                 return null;
             }

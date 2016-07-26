@@ -294,9 +294,6 @@ public class Util {
             } catch (ValidationException ex) {
                 String logMsg = "Signature do not confirm to SAML signature profile. Possible XML Signature " +
                         "Wrapping  Attack!";
-                if (log.isDebugEnabled()) {
-                    log.debug(logMsg, ex);
-                }
                 log.error(ex.getMessage(), ex);
                 return false;
             }
