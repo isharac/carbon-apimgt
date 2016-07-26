@@ -13,6 +13,8 @@
         "keyStorePassword" : "",
         "identityAlias" : "",
         "responseSigningEnabled":"true",
+        "assertionSigningEnabled":"false",
+        "audienceRestrictionsEnabled":"false",
         "keyStoreName" :"",
         "passive" : "true",
         "signRequests" : "true",

@@ -24,9 +24,25 @@
             var fullUserName = ssoRelyingParty.getSAMLResponseNameId(samlResponse);
             var MultitenantUtils = Packages.org.wso2.carbon.utils.multitenancy.MultitenantUtils;
             var domainName = null;
-            if(fullUserName != null){
-                domainName = MultitenantUtils.getTenantDomain(fullUserName);
-            }
+           if(fullUserName != null){
+           domainName = MultitenantUtils.getTenantDomain(fullUserName);
+           }else{
+           log.error("SAML response schema verification is failed.");
+           response.sendRedirect("../site/pages/error-pages/401.html");
+           return;
+           }
+
+           // validating the audience restrictions
+           var assertionConfig=site.ssoConfiguration.audienceRestrictionsEnabled;
+           if(assertionConfig === 'true'){
+           var isAudienceRestrictionsValid = ssoRelyingParty.validateAudienceRestrictions(samlResponse);
+           if (!Boolean(isAudienceRestrictionsValid)) {
+                log.error("SAML response audience restrictions verification is failed.");
+                response.sendRedirect("../site/pages/error-pages/401.html");
+                return;
+           }
+           }
+
             // relay state value should be a valid value, this value is mapped with request uri.
             var relayState = request.getParameter("RelayState");
             var requestedURI = ssoRelyingParty.getRelayStateProperty(relayState);
@@ -48,6 +64,20 @@
                     response.sendRedirect("../error.jag");
                     return;
                 }
+            }
+
+            // validating the saml assertion signature
+            var assertionSignatureConfig=site.ssoConfiguration.assertionSigningEnabled;
+            if( assertionSignatureConfig === 'true'){
+                if (MultitenantConstants.SUPER_TENANT_DOMAIN_NAME !== domainName) {
+                jagg.module("manager").loadTenantRegistry(String(domainName));
+            }
+            var isAssertionSignatureValid = ssoRelyingParty.validateAssertionSignature(samlResponse);
+            if (!Boolean(isAssertionSignatureValid)) {
+            log.error("SAML assertion signature is verification failed.");
+            response.sendRedirect("../site/pages/error-pages/401.html");
+            return;
+            }
             }
 
             ssoRelyingParty.setSessionAuthenticated(sessionId, samlResponse);
