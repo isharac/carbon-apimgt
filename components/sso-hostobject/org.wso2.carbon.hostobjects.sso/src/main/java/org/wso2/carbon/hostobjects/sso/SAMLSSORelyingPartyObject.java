@@ -1254,7 +1254,7 @@ public class SAMLSSORelyingPartyObject extends ScriptableObject {
 
         if (validFrom != null && validFrom.isAfterNow()) {
             if (log.isDebugEnabled()) {
-                log.debug("SAML Response contains invalid number of assertions.");
+                log.debug("Failed to meet SAML Assertion Condition 'Not Before'");
             }
             return false;
         }
