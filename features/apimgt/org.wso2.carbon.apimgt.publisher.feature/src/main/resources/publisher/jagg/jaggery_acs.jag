@@ -33,7 +33,11 @@
             // validating the assertion validity period
             if(site.ssoConfiguration.verifyAssertionValidityPeriod === 'true'){
                var timestampSkew=site.ssoConfiguration.timestampSkewInSeconds;
-               var isAssertionValidityPeriodValid = ssoRelyingParty.validateAssertionValidityPeriod(samlResponse,timestampSkew);
+               if(timestampSkew==undefined){
+                timestampSkew="300";
+               }
+               ssoRelyingParty.setProperty("timestampSkewInSeconds", timestampSkew);
+               var isAssertionValidityPeriodValid = ssoRelyingParty.validateAssertionValidityPeriod(samlResponse);
                if (!Boolean(isAssertionValidityPeriodValid)) {
                     log.error("SAML response assertion validity period verification is failed.");
                     response.sendRedirect("../site/pages/error-pages/401.html");
