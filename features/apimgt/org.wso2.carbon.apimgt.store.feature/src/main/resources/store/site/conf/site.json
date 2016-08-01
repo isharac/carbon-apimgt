@@ -17,7 +17,7 @@
         "assertionSigningEnabled":"true",
         "audienceRestrictionsEnabled":"false",
         "verifyAssertionValidityPeriod":"false",
-        "timestampSkewInSeconds":300,
+        "timestampSkewInSeconds":"300",
         "keyStoreName" :"",
         "passive" : "true",
         "signRequests" : "true",
