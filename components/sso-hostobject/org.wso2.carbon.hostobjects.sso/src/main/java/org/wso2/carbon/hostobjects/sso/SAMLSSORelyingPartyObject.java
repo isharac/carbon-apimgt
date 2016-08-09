@@ -1577,8 +1577,8 @@ public class SAMLSSORelyingPartyObject extends ScriptableObject {
                                                                      Function funObj)
             throws Exception {
         int argLength = args.length;
-        if (argLength != 2 || !(args[0] instanceof String && args[1] instanceof Integer)) {
-            throw new ScriptException("Invalid argument. The SAML response/TimestampSkew is missing.");
+        if (argLength != 1 || !(args[0] instanceof String)) {
+            throw new ScriptException("Invalid argument. The SAML response is missing.");
         }
 
         SAMLSSORelyingPartyObject relyingPartyObject = (SAMLSSORelyingPartyObject) thisObj;
@@ -1595,7 +1595,13 @@ public class SAMLSSORelyingPartyObject extends ScriptableObject {
 
         String decodedString = isEncoded ? Util.decode((String) args[0]) : (String) args[0];
         XMLObject samlObject = Util.unmarshall(decodedString);
-        int timestampSkew = (Integer) args[1];
+        String timestampSkewString = relyingPartyObject.getSSOProperty(SSOConstants.TIMESTAMP_SKEW_IN_SECONDS);
+        int timestampSkew;
+        if (timestampSkewString != null && !timestampSkewString.isEmpty()) {
+            timestampSkew = Integer.parseInt(timestampSkewString);
+        } else {
+            timestampSkew = 300;
+        }
 
         if (samlObject instanceof Response) {
             Response samlResponse = (Response) samlObject;
