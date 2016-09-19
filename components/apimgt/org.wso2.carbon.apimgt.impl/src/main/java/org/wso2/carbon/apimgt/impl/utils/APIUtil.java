@@ -5771,6 +5771,38 @@ public final class APIUtil {
                 Limit limit = policy.getDefaultQuotaPolicy().getLimit();
                 tier.setTimeUnit(limit.getTimeUnit());
                 tier.setUnitTime(limit.getUnitTime());
+
+                //If the policy is a subscription policy
+                if(policy instanceof SubscriptionPolicy){
+                    SubscriptionPolicy subscriptionPolicy = (SubscriptionPolicy)policy;
+                    //set the billing plan.
+                    tier.setTierPlan(subscriptionPolicy.getBillingPlan());
+
+                    //If the tier has custom attributes
+                    if(subscriptionPolicy.getCustomAttributes() != null &&
+                            subscriptionPolicy.getCustomAttributes().length > 0){
+
+                        Map<String, Object> tierAttributes = new HashMap<String, Object>();
+                        try {
+                            String customAttr = new String(subscriptionPolicy.getCustomAttributes(), "UTF-8");
+                            JSONParser parser = new JSONParser();
+                            JSONArray jsonArr = (JSONArray) parser.parse(customAttr);
+                            Iterator jsonArrIterator = jsonArr.iterator();
+                            while(jsonArrIterator.hasNext()){
+                                JSONObject json = (JSONObject)jsonArrIterator.next();
+                                tierAttributes.put(String.valueOf(json.get("name")), json.get("value"));
+                            }
+                            tier.setTierAttributes(tierAttributes);
+                        } catch (ParseException e) {
+                            log.error("Unable to convert String to Json", e);
+                            tier.setTierAttributes(null);
+                        } catch (UnsupportedEncodingException e) {
+                            log.error("Custom attribute byte array does not use UTF-8 character set", e);
+                            tier.setTierAttributes(null);
+                        }
+                    }
+                }
+
                 if(limit instanceof RequestCountLimit) {
                     RequestCountLimit countLimit = (RequestCountLimit) limit;
                     tier.setRequestsPerMin(countLimit.getRequestCount());
