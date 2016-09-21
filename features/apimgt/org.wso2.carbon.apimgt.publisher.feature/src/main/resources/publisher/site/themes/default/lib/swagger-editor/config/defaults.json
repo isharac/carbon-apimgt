@@ -8,26 +8,22 @@
     }
   },
   "disableCodeGen": true,
-  "disableExamples":true,
-  "disableImport":true,
-  "examplesFolder": "/spec-files/",
+  "examplesFolder": "spec-files/",
   "editorOptions": {
-  
+    "theme": "ace/theme/atom_dark"
   },
   "exampleFiles": [
-
   ],
   "autocompleteExtension": {},
   "useBackendForStorage": false,
   "backendThrottle": 200,
+  "keyPressDebounceTime": 200,
   "backendEndpoint": "/editor/spec",
-  "backendHealthCheckTimeout": 5000,
   "useYamlBackend": false,
   "disableFileMenu": false,
-  "headerBranding": true,
+  "headerBranding": false,
+  "disableNewUserIntro": true,
   "enableTryIt": false,
   "brandingCssClass": "wso2apim",
-  "schemaUrl": "/schema/swagger.json",
-  "importProxyUrl": "",
-  "disableNewUserIntro": true
+  "importProxyUrl": ""
 }
