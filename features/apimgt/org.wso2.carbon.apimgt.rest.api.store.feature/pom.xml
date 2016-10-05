@@ -107,11 +107,9 @@
                             <resources>
                                 <resource>
                                     <directory>${project.parent.parent.basedir}/components/apimgt/org.wso2.carbon.apimgt.rest.api.util/src/main/resources/doc-templates</directory>
-                                    <includes>
-                                        <include>assets/</include>
-                                        <include>fonts/</include>
-                                        <include>js/</include>
-                                    </includes>
+                                    <excludes>
+                                        <exclude>**/*.mustache</exclude>
+                                    </excludes>
                                 </resource>
                             </resources>
                         </configuration>
