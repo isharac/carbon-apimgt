@@ -627,6 +627,7 @@ public final class APIUtil {
                 //deprecated throttling method
                 Set<Tier> availableTier = new HashSet<Tier>();
                 String tiers = artifact.getAttribute(APIConstants.API_OVERVIEW_TIER);
+                String tenantDomainName = MultitenantUtils.getTenantDomain(replaceEmailDomainBack(providerName));
                 if (tiers != null) {
                     String[] tierNames = tiers.split("\\|\\|");
                     for (String tierName : tierNames) {
@@ -635,9 +636,10 @@ public final class APIUtil {
 
                     }
 
-                    api.addAvailableTiers(availableTier);
-                    String tenantDomainName = MultitenantUtils.getTenantDomain(replaceEmailDomainBack(providerName));
+                    api.addAvailableTiers(availableTier);                    
                     api.setMonetizationCategory(getAPIMonetizationCategory(availableTier, tenantDomainName));
+                } else {
+                	api.setMonetizationCategory(getAPIMonetizationCategory(availableTier, tenantDomainName));
                 }
             }
 
