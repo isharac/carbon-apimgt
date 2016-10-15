@@ -131,9 +131,8 @@ public class APIMgtResponseHandler extends APIMgtCommonExecutionPublisher {
             ResponsePublisherDTO responsePublisherDTO = new ResponsePublisherDTO();
             responsePublisherDTO.setConsumerKey((String) mc.getProperty(APIMgtGatewayConstants.CONSUMER_KEY));
             responsePublisherDTO.setUsername((String) mc.getProperty(APIMgtGatewayConstants.USER_ID));
-            String tenantDomain = (responsePublisherDTO.getUsername() == null ? null :
-                    MultitenantUtils.getTenantDomain(responsePublisherDTO.getUsername()));
-            responsePublisherDTO.setTenantDomain(tenantDomain);
+            String fullRequestPath = (String) mc.getProperty(RESTConstants.REST_FULL_REQUEST_PATH);
+            String tenantDomain = MultitenantUtils.getTenantDomainFromRequestURL(fullRequestPath);
             responsePublisherDTO.setContext((String) mc.getProperty(APIMgtGatewayConstants.CONTEXT));
             String apiVersion = (String) mc.getProperty(RESTConstants.SYNAPSE_REST_API);
             responsePublisherDTO.setApiVersion(apiVersion);
@@ -152,6 +151,7 @@ public class APIMgtResponseHandler extends APIMgtCommonExecutionPublisher {
                 apiPublisher = APIUtil.getAPIProviderFromRESTAPI(apiVersion, tenantDomain);
             }
             responsePublisherDTO.setApiPublisher(apiPublisher);
+            responsePublisherDTO.setTenantDomain(MultitenantUtils.getTenantDomain(apiPublisher));
             responsePublisherDTO.setApplicationName((String) mc.getProperty(APIMgtGatewayConstants.APPLICATION_NAME));
             responsePublisherDTO.setApplicationId((String) mc.getProperty(APIMgtGatewayConstants.APPLICATION_ID));
             responsePublisherDTO.setCacheHit(cacheHit);
