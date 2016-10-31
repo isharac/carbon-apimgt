@@ -323,38 +323,38 @@ public class APIGatewayManager {
         return false;
     }
     
-    /**
+	/**
 	 * Get the endpoint Security type of the published API
 	 * 
 	 * @param api - The API to be checked.
 	 * @param tenantDomain - Tenant Domain of the publisher
 	 * @return Endpoint security type; Basic or Digest
 	 */
-    public String getAPIEndpointSecurityType(API api, String tenantDomain)throws APIManagementException {
-        for (Environment environment : environments.values()) {
-            try {
-                APIGatewayAdminClient client = new APIGatewayAdminClient(api.getId(), environment);
-                if (client.getApi(tenantDomain, api.getId()) != null) {
-                    APIData apiData = client.getApi(tenantDomain, api.getId());
-                    ResourceData[] resourceData = apiData.getResources();
-                    for (ResourceData resource : resourceData) {
-                    	if (resource != null && resource.getInSeqXml() != null && 
-                    			resource.getInSeqXml().contains("DigestAuthMediator")) {
-                    		return APIConstants.APIEndpointSecurityConstants.DIGEST_AUTH;
-                    	}
-                    }
-                }
-            } catch (AxisFault axisFault) {
-            	//didn't throw this exception to check api available in all the environments
-                //therefore we didn't throw exception to avoid if gateway unreachable affect
+	public String getAPIEndpointSecurityType(API api, String tenantDomain) throws APIManagementException {
+		for (Environment environment : environments.values()) {
+			try {
+				APIGatewayAdminClient client = new APIGatewayAdminClient(api.getId(), environment);
+				if (client.getApi(tenantDomain, api.getId()) != null) {
+					APIData apiData = client.getApi(tenantDomain, api.getId());
+					ResourceData[] resourceData = apiData.getResources();
+					for (ResourceData resource : resourceData) {
+						if (resource != null && resource.getInSeqXml() != null 
+								&& resource.getInSeqXml().contains("DigestAuthMediator")) {
+							return APIConstants.APIEndpointSecurityConstants.DIGEST_AUTH;
+						}
+					}
+				}
+			} catch (AxisFault axisFault) {
+				// didn't throw this exception to check api available in all the environments
+				// therefore we didn't throw exception to avoid if gateway unreachable affect
 				if (api.getStatus() != APIStatus.CREATED) {
 					log.error("Error occurred when check api endpoint security type on gateway"
 									+ environment.getName(), axisFault);
 				}
-            }
-        }
-        return APIConstants.APIEndpointSecurityConstants.BASIC_AUTH;
-    }
+			}
+		}
+		return APIConstants.APIEndpointSecurityConstants.BASIC_AUTH;
+	}
 
 	/**
 	 * Get the specified in/out sequences from api object
