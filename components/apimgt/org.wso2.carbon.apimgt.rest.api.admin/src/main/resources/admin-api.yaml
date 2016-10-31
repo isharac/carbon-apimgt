@@ -8,7 +8,7 @@ info:
   description: |
     This document specifies a **RESTful API** for WSO2 **API Manager** - Admin Portal.
 
-    It is written with [swagger 2](http://swagger.io/).
+    Please see [full swagger definition](https://raw.githubusercontent.com/wso2/carbon-apimgt/v6.0.4/components/apimgt/org.wso2.carbon.apimgt.rest.api.admin/src/main/resources/admin-api.yaml) of the API which is written using [swagger 2.0](http://swagger.io/) specification.
 
   contact:
     name: "WSO2"
