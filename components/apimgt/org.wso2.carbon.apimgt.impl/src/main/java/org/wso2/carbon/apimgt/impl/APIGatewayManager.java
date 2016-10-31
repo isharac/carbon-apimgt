@@ -347,10 +347,10 @@ public class APIGatewayManager {
             } catch (AxisFault axisFault) {
             	//didn't throw this exception to check api available in all the environments
                 //therefore we didn't throw exception to avoid if gateway unreachable affect
-                if (api.getStatus() != APIStatus.CREATED) {
-                    log.error("Error occurred when check api endpoint security type on gateway" 
-                    											+ environment.getName(), axisFault);
-                }
+				if (api.getStatus() != APIStatus.CREATED) {
+					log.error("Error occurred when check api endpoint security type on gateway"
+									+ environment.getName(), axisFault);
+				}
             }
         }
         return APIConstants.APIEndpointSecurityConstants.BASIC_AUTH;
