@@ -1142,6 +1142,11 @@ public final class APIUtil {
                     throw new APIManagementException("Unknown sourceType " + sourceType + " provided for documentation");
             }
             artifact.setAttribute(APIConstants.DOC_SOURCE_TYPE, sourceType.name());
+            //Documentation Source URL is a required field in the documentation.rxt for migrated setups
+            //Therefore setting a default value if it is not set. 
+            if (documentation.getSourceUrl() == null) {
+            	documentation.setSourceUrl(" ");
+            }
             artifact.setAttribute(APIConstants.DOC_SOURCE_URL, documentation.getSourceUrl());
             artifact.setAttribute(APIConstants.DOC_FILE_PATH, documentation.getFilePath());
             artifact.setAttribute(APIConstants.DOC_OTHER_TYPE_NAME, documentation.getOtherTypeName());
