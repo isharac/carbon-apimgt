@@ -117,17 +117,13 @@ public class GlobalThrottleEngineClient {
         options.setProperty(HTTPConstants.COOKIE_STRING, sessionCookie);
 
         eventProcessorAdminServiceStub.validateExecutionPlan(executionPlan);
-        ExecutionPlanConfigurationDto[] executionPlanConfigurationDtos = eventProcessorAdminServiceStub
-                .getAllActiveExecutionPlanConfigurations();
+        ExecutionPlanConfigurationDto executionPlanConfiguration = eventProcessorAdminServiceStub
+                .getActiveExecutionPlanConfiguration(name);
+
         boolean isUpdateRequest = false;
-        if (executionPlanConfigurationDtos != null) {
-            for (ExecutionPlanConfigurationDto executionPlanConfigurationDto : executionPlanConfigurationDtos) {
-                if (executionPlanConfigurationDto.getName().trim().equals(name)) {
-                    eventProcessorAdminServiceStub.editActiveExecutionPlan(executionPlan, name);
-                    isUpdateRequest = true;
-                    break;
-                }
-            }
+        if (executionPlanConfiguration != null) {
+            eventProcessorAdminServiceStub.editActiveExecutionPlan(executionPlan, name);
+            isUpdateRequest = true;
         }
         if (!isUpdateRequest) {
             eventProcessorAdminServiceStub.deployExecutionPlan(executionPlan);
