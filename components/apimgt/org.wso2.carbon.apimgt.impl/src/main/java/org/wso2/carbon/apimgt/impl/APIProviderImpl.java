@@ -4230,7 +4230,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                 Map.Entry<String, String> pair = (Map.Entry<String, String>) iterator.next();
                 String policyPlanName  = pair.getKey();
                 String flowString  = pair.getValue();
-                deploymentManager.deployPolicyToGlobalCEP(policyPlanName, flowString);
+                deploymentManager.updatePolicyToGlobalCEP(policyPlanName, flowString);
 
                 //publishing keytemplate after update
                 if (oldKeyTemplate != null && newKeyTemplate != null) {

@@ -622,7 +622,7 @@ var addPolicyToBackend = function () {
         if (!data.error) {
             location.href = 'api-policy-list';
         } else {
-            jagg.message({content:data.error.message,type:"error"});
+            jagg.message({content:data.message,type:"error"});
         }
     }, "json");
 };
