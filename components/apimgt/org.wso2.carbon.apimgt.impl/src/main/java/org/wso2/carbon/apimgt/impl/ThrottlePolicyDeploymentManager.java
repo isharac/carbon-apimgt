@@ -71,6 +71,21 @@ public class ThrottlePolicyDeploymentManager {
     }
 
     /**
+     * This method will be usde to update an existing policy
+     *
+     * @param policyName policy name of the policy to be updated.
+     * @param policy Policy string to be updated.
+     * @throws APIManagementException
+     */
+    public void updatePolicyToGlobalCEP(String policyName, String policy) throws APIManagementException {
+        try {
+            globalThrottleEngineClient.updateExecutionPlan(policyName, policy);
+        } catch (Exception e) {
+            log.error("Error while updating policy to global policy server." + e.getMessage());
+            throw new APIManagementException(e);
+        }
+    }
+    /**
      * Undeploy policy from global CEP.
      *
      * @param policyName name of the policy file to be deleted.
