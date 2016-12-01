@@ -25,6 +25,8 @@ import org.wso2.carbon.apimgt.core.models.API;
 import org.wso2.carbon.apimgt.core.models.DocumentInfo;
 import org.wso2.carbon.apimgt.core.models.LifeCycleEvent;
 import org.wso2.carbon.apimgt.core.models.Provider;
+import org.wso2.carbon.apimgt.core.models.Subscription;
+import org.wso2.carbon.apimgt.core.util.APIMgtConstants;
 import org.wso2.carbon.apimgt.lifecycle.manager.core.impl.LifecycleState;
 
 import java.io.InputStream;
@@ -177,6 +179,24 @@ public interface APIPublisher extends APIManager {
     boolean checkIfAPIExists(String apiId) throws APIManagementException;
 
     /**
+     * Checks if a given API name exists in the registry
+     *
+     * @param name
+     * @return boolean result
+     * @throws APIManagementException
+     */
+    boolean checkIfAPINameExists(String name) throws APIManagementException;
+
+    /**
+     * Checks if a given API context exists in the registry
+     *
+     * @param context
+     * @return boolean result
+     * @throws APIManagementException
+     */
+    boolean checkIfAPIContextExists(String context) throws APIManagementException;
+
+    /**
      * This method used to save the documentation content
      *
      * @param api               API
@@ -239,7 +259,8 @@ public interface APIPublisher extends APIManager {
      * @param appId     Application Id              *
      * @throws APIManagementException If failed to update subscription status
      */
-    void updateSubscription(String apiId, String subStatus, int appId) throws APIManagementException;
+    void updateSubscription(String apiId, APIMgtConstants.SubscriptionStatus subStatus, String appId) throws
+            APIManagementException;
 
 
     /**
@@ -263,17 +284,7 @@ public interface APIPublisher extends APIManager {
     LifecycleState getAPILifeCycleData(String apiId) throws APIManagementException;
 
 
-    /**
-     * Update api related information such as database entries, registry updates for state change.
-     *
-     * @param identifier
-     * @param newStatus  accepted if changes are not pushed to a gateway
-     * @param deprecateOlderVersions
-     *@param requireReSubscriptions @return boolean value representing success not not
-     * @throws APIManagementException
-     */
-    void updateAPIForStateChange(String identifier, String newStatus, boolean deprecateOlderVersions, boolean
-            requireReSubscriptions) throws APIManagementException;
+
 
     /**
      * Get the current lifecycle status of the api
@@ -310,4 +321,28 @@ public interface APIPublisher extends APIManager {
      */
     InputStream getThumbnailImage(String apiId) throws APIManagementException;
 
+    /**
+     * Return {@link Subscription} of subscription id
+     * @param subId
+     * @return
+     * @throws APIManagementException
+     */
+    Subscription getSubscriptionByUUID(String subId) throws APIManagementException;
+    /**
+     * This method updates gateway config in the database
+     *
+     * @param apiId        id of the String
+     * @param configString text to be saved in the registry
+     * @throws APIManagementException
+     */
+    void updateApiGatewayConfig(String apiId, String configString) throws APIManagementException;
+
+    /**
+     * This method retrieve gateway config in the database
+     *
+     * @param apiId id of the String
+     * @return API gateway config as a string
+     * @throws APIManagementException
+     */
+    String getApiGatewayConfig(String apiId) throws APIManagementException;
 }

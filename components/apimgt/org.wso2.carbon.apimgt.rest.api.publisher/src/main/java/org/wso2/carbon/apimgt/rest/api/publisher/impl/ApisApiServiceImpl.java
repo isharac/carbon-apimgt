@@ -1,14 +1,12 @@
 package org.wso2.carbon.apimgt.rest.api.publisher.impl;
 
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wso2.carbon.apimgt.core.api.APIPublisher;
 import org.wso2.carbon.apimgt.core.exception.APIManagementException;
 import org.wso2.carbon.apimgt.core.impl.APIManagerFactory;
 import org.wso2.carbon.apimgt.core.models.API;
+import org.wso2.carbon.apimgt.core.util.APIMgtConstants;
 import org.wso2.carbon.apimgt.rest.api.common.RestApiConstants;
 import org.wso2.carbon.apimgt.rest.api.common.dto.ErrorDTO;
 import org.wso2.carbon.apimgt.rest.api.common.util.RestApiUtil;
@@ -27,7 +25,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.StringTokenizer;
 
 @javax.annotation.Generated(value = "class org.wso2.maven.plugins.JavaMSF4JServerCodegen", date = "2016-11-01T13:47:43.416+05:30")
 public class ApisApiServiceImpl extends ApisApiService {
@@ -125,6 +125,50 @@ public class ApisApiServiceImpl extends ApisApiService {
         // do some magic!
         return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, "magic!")).build();
     }
+
+    @Override
+    public Response apisApiIdGatewayConfigGet(String apiId, String accept, String ifNoneMatch, String ifModifiedSince)
+            throws NotFoundException {
+        String username = RestApiUtil.getLoggedInUsername();
+        try {
+            APIPublisher apiPublisher = RestAPIPublisherUtil.getApiPublisher(username);
+            String gatewayConfig = apiPublisher.getApiGatewayConfig(apiId);
+            return Response.ok().entity(gatewayConfig).build();
+        } catch (APIManagementException e) {
+            //Auth failure occurs when cross tenant accessing APIs. Sends 404, since we don't need to expose the
+            // existence of the resource
+            if (RestApiUtil.isDueToResourceNotFound(e) || RestApiUtil.isDueToAuthorizationFailure(e)) {
+                RestApiUtil.handleResourceNotFoundError(RestApiConstants.RESOURCE_API, apiId, e, log);
+            } else {
+                String errorMessage = "Error while retrieving gateway config of API : " + apiId;
+                RestApiUtil.handleInternalServerError(errorMessage, e, log);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Response apisApiIdGatewayConfigPut(String apiId, String gatewayConfig, String contentType, String ifMatch,
+            String ifUnmodifiedSince) throws NotFoundException {
+        String username = RestApiUtil.getLoggedInUsername();
+        try {
+            APIPublisher apiPublisher = RestAPIPublisherUtil.getApiPublisher(username);
+            apiPublisher.updateApiGatewayConfig(apiId, gatewayConfig);
+            String apiGatewayConfig = apiPublisher.getApiGatewayConfig(apiId);
+            return Response.ok().entity(apiGatewayConfig).build();
+        } catch (APIManagementException e) {
+            //Auth failure occurs when cross tenant accessing APIs. Sends 404, since we don't need to expose the
+            // existence of the resource
+            if (RestApiUtil.isDueToResourceNotFound(e) || RestApiUtil.isDueToAuthorizationFailure(e)) {
+                RestApiUtil.handleResourceNotFoundError(RestApiConstants.RESOURCE_API, apiId, e, log);
+            } else {
+                String errorMessage = "Error while retrieving API : " + apiId;
+                RestApiUtil.handleInternalServerError(errorMessage, e, log);
+            }
+        }
+        return null;
+    }
+
     @Override
     public Response apisApiIdGet(String apiId
 , String accept
@@ -291,22 +335,28 @@ public class ApisApiServiceImpl extends ApisApiService {
 //        }
         return null;
     }
+
     @Override
     public Response apisChangeLifecyclePost(String action
-, String apiId
-, String lifecycleChecklist
-, String ifMatch
-, String ifUnmodifiedSince
- ) throws NotFoundException {
+            , String apiId
+            , String lifecycleChecklist
+            , String ifMatch
+            , String ifUnmodifiedSince
+    ) throws NotFoundException {
         String username = RestApiUtil.getLoggedInUsername();
-        Map<String,Boolean> lifecycleChecklistMap = new HashMap<>();
+        Map<String, Boolean> lifecycleChecklistMap = new HashMap<>();
         try {
-            if (lifecycleChecklist != null){
-                lifecycleChecklistMap = (JSONObject)new JSONParser().parse(lifecycleChecklist);
+            if (lifecycleChecklist != null) {
+                String[] checkList = lifecycleChecklist.split(",");
+                for (String checkList1 : checkList) {
+                    String attributeName = new StringTokenizer(checkList1, ":").nextToken();
+                    Boolean attributeValue = Boolean.valueOf(new StringTokenizer(checkList1, ":").nextToken());
+                    lifecycleChecklistMap.put(attributeName, attributeValue);
+                }
             }
             RestAPIPublisherUtil.getApiPublisher(username).updateAPIStatus(apiId, action, lifecycleChecklistMap);
             return Response.ok().build();
-        } catch (APIManagementException | ParseException e) {
+        } catch (APIManagementException e) {
             //Auth failure occurs when cross tenant accessing APIs. Sends 404, since we don't need to expose the
             // existence of the resource
             if (RestApiUtil.isDueToResourceNotFound(e) || RestApiUtil.isDueToAuthorizationFailure(e)) {
@@ -352,6 +402,7 @@ public class ApisApiServiceImpl extends ApisApiService {
 //        }
         return null;
     }
+
     @Override
     public Response apisGet(Integer limit
 , Integer offset
@@ -371,6 +422,43 @@ public class ApisApiServiceImpl extends ApisApiService {
         }
         return null;
     }
+
+    @Override
+    public Response apisHead(String query, String accept, String ifNoneMatch) throws NotFoundException {
+        //TODO improve the query parameters searching options
+        String username = RestApiUtil.getLoggedInUsername();
+        String context = "context";
+        String name = "name";
+        boolean status;
+
+        try {
+            APIPublisher apiPublisher = RestAPIPublisherUtil.getApiPublisher(username);
+            String[] words = query.split(":");
+
+            if (words.length > 1) {
+                if (context.equalsIgnoreCase(words[0])) {
+                    status = apiPublisher.checkIfAPIContextExists(words[1]);
+                } else if (name.equalsIgnoreCase(words[0])) {
+                    status = apiPublisher.checkIfAPINameExists(words[1]);
+                } else {
+                    status = false;
+                }
+            } else {
+                return Response.status(Response.Status.BAD_REQUEST).build();
+            }
+
+            if (status) {
+                return Response.status(Response.Status.OK).build();
+            } else {
+                return Response.status(Response.Status.NOT_FOUND).build();
+            }
+        } catch (APIManagementException e) {
+            String errorMessage = "Error while checking status.";
+            RestApiUtil.handleInternalServerError(errorMessage, e, log);
+        }
+        return null;
+    }
+
     @Override
     public Response apisPost(APIDTO body
 , String contentType
@@ -387,10 +475,15 @@ public class ApisApiServiceImpl extends ApisApiService {
         } catch (APIManagementException e) {
             String errorMessage = "Error while adding new API : " + body.getProvider() + "-" +
                     body.getName() + "-" + body.getVersion();
-            ErrorDTO errorDTO = RestApiUtil.getErrorDTO(RestApiConstants.STATUS_BAD_REQUEST_MESSAGE_DEFAULT,
-                    e.getErrorCode(), RestApiConstants.STATUS_BAD_REQUEST_MESSAGE_DEFAULT);
+            HashMap<String, String> paramList = new HashMap<String, String>();
+
+            paramList.put(APIMgtConstants.ExceptionsConstants.API_NAME, body.getName());
+            paramList.put(APIMgtConstants.ExceptionsConstants.API_VERSION, body.getVersion());
+
+            ErrorDTO errorDTO = RestApiUtil.getErrorDTO(e.getErrorHandler().getErrorMessage(),
+                    e.getErrorHandler().getErrorCode(), e.getErrorHandler().getErrorDescription(),paramList);
             log.error(errorMessage,e);
-            return Response.status(Response.Status.BAD_REQUEST).entity(errorDTO).build();
+            return Response.status(e.getErrorHandler().getHttpStatusCode()).entity(errorDTO).build();
         }
 //        catch (URISyntaxException e) {
 //            String errorMessage = "Error while retrieving API location : " + body.getProvider() + "-" +

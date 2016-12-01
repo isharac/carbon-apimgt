@@ -32,9 +32,10 @@ import java.util.Set;
  */
 public final class Application {
     private String name;
-    private Set<APISubscription> apiSubscriptions = new LinkedHashSet<APISubscription>();
+    private Set<Subscription> subscriptions;
     private String groupId;
     private String uuid;
+    private String policyId;
     private String description;
     private String tier;
     private String status;
@@ -43,19 +44,21 @@ public final class Application {
     private LocalDateTime createdTime;
     private String updatedUser;
     private LocalDateTime updatedTime;
-    private List<APIKey> keys = new ArrayList<APIKey>();
+    private List<APIKey> keys;
 
 
     public Application(String name, String createdUser) {
         this.name = name;
         this.createdUser = createdUser;
+        subscriptions = new LinkedHashSet<Subscription>();
+        keys = new ArrayList<APIKey>();
     }
 
     public String getName() {
         return name;
     }
 
-    public String getUuid() {
+    public String getId() {
         return uuid;
     }
 
@@ -95,12 +98,12 @@ public final class Application {
         this.updatedTime = updatedTime;
     }
 
-    public Set<APISubscription> getAPISubscriptions() {
-        return apiSubscriptions;
+    public Set<Subscription> getAPISubscriptions() {
+        return subscriptions;
     }
 
-    public void addAPISubscriptions(Set<APISubscription> apiSubscriptions) {
-        this.apiSubscriptions.addAll(apiSubscriptions);
+    public void addAPISubscriptions(Set<Subscription> subscriptions) {
+        this.subscriptions.addAll(subscriptions);
     }
 
     public String getDescription() {
@@ -149,6 +152,14 @@ public final class Application {
 
     public void addKey(APIKey key) {
         keys.add(key);
+    }
+
+    public String getPolicyId() {
+        return policyId;
+    }
+
+    public void setPolicyId(String policyId) {
+        this.policyId = policyId;
     }
 
     @Override

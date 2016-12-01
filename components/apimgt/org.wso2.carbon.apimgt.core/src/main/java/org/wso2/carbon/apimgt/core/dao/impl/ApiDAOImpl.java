@@ -29,7 +29,6 @@ import org.wso2.carbon.apimgt.core.models.BusinessInformation;
 import org.wso2.carbon.apimgt.core.models.CorsConfiguration;
 import org.wso2.carbon.apimgt.core.models.DocumentInfo;
 import org.wso2.carbon.apimgt.core.models.ResourceCategory;
-import org.wso2.carbon.apimgt.core.models.ResourceVisibility;
 import org.wso2.carbon.apimgt.core.models.UriTemplate;
 
 import java.io.ByteArrayInputStream;
@@ -78,7 +77,7 @@ public class ApiDAOImpl implements ApiDAO {
                 "VISIBILITY, IS_RESPONSE_CACHED, CACHE_TIMEOUT, TECHNICAL_OWNER, TECHNICAL_EMAIL, " +
                 "BUSINESS_OWNER, BUSINESS_EMAIL, LIFECYCLE_INSTANCE_ID, CURRENT_LC_STATUS, " +
                 "CORS_ENABLED, CORS_ALLOW_ORIGINS, CORS_ALLOW_CREDENTIALS, CORS_ALLOW_HEADERS, CORS_ALLOW_METHODS, " +
-                "CREATED_BY, CREATED_TIME, LAST_UPDATED_TIME FROM AM_API WHERE UUID = ?";
+                "CREATED_BY, CREATED_TIME, LAST_UPDATED_TIME, PARENT_API_ID FROM AM_API WHERE UUID = ?";
 
         try (Connection connection = DAOUtil.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
@@ -273,58 +272,64 @@ public class ApiDAOImpl implements ApiDAO {
 
         try (Connection connection = DAOUtil.getConnection();
              PreparedStatement statement = connection.prepareStatement(addAPIQuery)) {
-            String apiPrimaryKey = api.getId();
-            statement.setString(1, api.getProvider());
-            statement.setString(2, api.getName());
-            statement.setString(3, api.getContext());
-            statement.setString(4, api.getVersion());
-            statement.setBoolean(5, api.isDefaultVersion());
-            statement.setString(6, api.getDescription());
-            statement.setString(7, api.getVisibility().toString());
-            statement.setBoolean(8, api.isResponseCachingEnabled());
-            statement.setInt(9, api.getCacheTimeout());
-            statement.setString(10, apiPrimaryKey);
+            try {
+                connection.setAutoCommit(false);
 
-            BusinessInformation businessInformation = api.getBusinessInformation();
-            statement.setString(11, businessInformation.getTechnicalOwner());
-            statement.setString(12, businessInformation.getTechnicalOwnerEmail());
-            statement.setString(13, businessInformation.getBusinessOwner());
-            statement.setString(14, businessInformation.getBusinessOwnerEmail());
+                String apiPrimaryKey = api.getId();
+                statement.setString(1, api.getProvider());
+                statement.setString(2, api.getName());
+                statement.setString(3, api.getContext());
+                statement.setString(4, api.getVersion());
+                statement.setBoolean(5, api.isDefaultVersion());
+                statement.setString(6, api.getDescription());
+                statement.setString(7, api.getVisibility().toString());
+                statement.setBoolean(8, api.isResponseCachingEnabled());
+                statement.setInt(9, api.getCacheTimeout());
+                statement.setString(10, apiPrimaryKey);
 
-            statement.setString(15, api.getLifecycleInstanceId());
-            statement.setString(16, api.getLifeCycleStatus());
+                BusinessInformation businessInformation = api.getBusinessInformation();
+                statement.setString(11, businessInformation.getTechnicalOwner());
+                statement.setString(12, businessInformation.getTechnicalOwnerEmail());
+                statement.setString(13, businessInformation.getBusinessOwner());
+                statement.setString(14, businessInformation.getBusinessOwnerEmail());
 
-            CorsConfiguration corsConfiguration = api.getCorsConfiguration();
-            statement.setBoolean(17, corsConfiguration.isEnabled());
-            statement.setString(18, String.join(",", corsConfiguration.getAllowOrigins()));
-            statement.setBoolean(19, corsConfiguration.isAllowCredentials());
-            statement.setString(20, String.join(",", corsConfiguration.getAllowHeaders()));
-            statement.setString(21, String.join(",", corsConfiguration.getAllowMethods()));
+                statement.setString(15, api.getLifecycleInstanceId());
+                statement.setString(16, api.getLifeCycleStatus());
 
-            statement.setString(22, api.getCreatedBy());
-            statement.setTimestamp(23, Timestamp.valueOf(api.getCreatedTime()));
-            statement.setTimestamp(24, Timestamp.valueOf(api.getLastUpdatedTime()));
+                CorsConfiguration corsConfiguration = api.getCorsConfiguration();
+                statement.setBoolean(17, corsConfiguration.isEnabled());
+                statement.setString(18, String.join(",", corsConfiguration.getAllowOrigins()));
+                statement.setBoolean(19, corsConfiguration.isAllowCredentials());
+                statement.setString(20, String.join(",", corsConfiguration.getAllowHeaders()));
+                statement.setString(21, String.join(",", corsConfiguration.getAllowMethods()));
 
-            statement.execute();
+                statement.setString(22, api.getCreatedBy());
+                statement.setTimestamp(23, Timestamp.valueOf(api.getCreatedTime()));
+                statement.setTimestamp(24, Timestamp.valueOf(api.getLastUpdatedTime()));
 
-            if (API.Visibility.RESTRICTED == api.getVisibility()) {
-                addVisibleRole(connection, apiPrimaryKey, api.getVisibleRoles());
+                statement.execute();
+
+                if (API.Visibility.RESTRICTED == api.getVisibility()) {
+                    addVisibleRole(connection, apiPrimaryKey, api.getVisibleRoles());
+                }
+
+                String wsdlUri = api.getWsdlUri();
+
+                if (wsdlUri != null) {
+                    ApiResourceDAO.addTextResource(connection, apiPrimaryKey, UUID.randomUUID().toString(),
+                            ResourceCategory.WSDL_URI, MediaType.TEXT_PLAIN, wsdlUri);
+                }
+                addTagsMapping(connection, apiPrimaryKey, api.getTags());
+                addAPIDefinition(connection, apiPrimaryKey, api.getApiDefinition());
+                addTransports(connection, apiPrimaryKey, api.getTransport());
+                addUrlMappings(connection, api.getUriTemplates(), apiPrimaryKey);
+                addSubscriptionPolicies(connection, api.getPolicies(), apiPrimaryKey);
+
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw new APIMgtDAOException(e);
             }
-
-            String wsdlUri = api.getWsdlUri();
-
-            if (wsdlUri != null) {
-                ApiResourceDAO.addTextResource(connection, apiPrimaryKey, UUID.randomUUID().toString(),
-                        ResourceCategory.WSDL_URI, MediaType.TEXT_PLAIN, wsdlUri);
-            }
-            addTagsMapping(connection, apiPrimaryKey, api.getTags());
-            addAPIDefinition(connection, apiPrimaryKey, api.getApiDefinition(),
-                                                                    ResourceVisibility.RESOURCE_LEVEL.toString());
-            addTransports(connection, apiPrimaryKey, api.getTransport());
-            addUrlMappings(connection, api.getUriTemplates(), apiPrimaryKey);
-            addSubscriptionPolicies(connection, api.getPolicies(), apiPrimaryKey);
-
-            connection.commit();
         } catch (SQLException e) {
             throw new APIMgtDAOException(e);
         }
@@ -348,61 +353,68 @@ public class ApiDAOImpl implements ApiDAO {
 
         try (Connection connection = DAOUtil.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setBoolean(1, substituteAPI.isDefaultVersion());
-            statement.setString(2, substituteAPI.getDescription());
-            statement.setString(3, substituteAPI.getVisibility().toString());
-            statement.setBoolean(4, substituteAPI.isResponseCachingEnabled());
-            statement.setInt(5, substituteAPI.getCacheTimeout());
+            try {
+                connection.setAutoCommit(false);
 
-            BusinessInformation businessInformation = substituteAPI.getBusinessInformation();
-            statement.setString(6, businessInformation.getTechnicalOwner());
-            statement.setString(7, businessInformation.getTechnicalOwnerEmail());
-            statement.setString(8, businessInformation.getBusinessOwner());
-            statement.setString(9, businessInformation.getBusinessOwnerEmail());
+                statement.setBoolean(1, substituteAPI.isDefaultVersion());
+                statement.setString(2, substituteAPI.getDescription());
+                statement.setString(3, substituteAPI.getVisibility().toString());
+                statement.setBoolean(4, substituteAPI.isResponseCachingEnabled());
+                statement.setInt(5, substituteAPI.getCacheTimeout());
 
-            CorsConfiguration corsConfiguration = substituteAPI.getCorsConfiguration();
-            statement.setBoolean(10, corsConfiguration.isEnabled());
-            statement.setString(11, String.join(",", corsConfiguration.getAllowOrigins()));
-            statement.setBoolean(12, corsConfiguration.isAllowCredentials());
-            statement.setString(13, String.join(",", corsConfiguration.getAllowHeaders()));
-            statement.setString(14, String.join(",", corsConfiguration.getAllowMethods()));
+                BusinessInformation businessInformation = substituteAPI.getBusinessInformation();
+                statement.setString(6, businessInformation.getTechnicalOwner());
+                statement.setString(7, businessInformation.getTechnicalOwnerEmail());
+                statement.setString(8, businessInformation.getBusinessOwner());
+                statement.setString(9, businessInformation.getBusinessOwnerEmail());
 
-            statement.setTimestamp(15, Timestamp.valueOf(substituteAPI.getLastUpdatedTime()));
-            statement.setString(16, apiID);
+                CorsConfiguration corsConfiguration = substituteAPI.getCorsConfiguration();
+                statement.setBoolean(10, corsConfiguration.isEnabled());
+                statement.setString(11, String.join(",", corsConfiguration.getAllowOrigins()));
+                statement.setBoolean(12, corsConfiguration.isAllowCredentials());
+                statement.setString(13, String.join(",", corsConfiguration.getAllowHeaders()));
+                statement.setString(14, String.join(",", corsConfiguration.getAllowMethods()));
 
-            statement.execute();
+                statement.setTimestamp(15, Timestamp.valueOf(substituteAPI.getLastUpdatedTime()));
+                statement.setString(16, apiID);
 
-            deleteVisibleRoles(connection, apiID); // Delete current visible roles if they exist
+                statement.execute();
 
-            if (API.Visibility.RESTRICTED == substituteAPI.getVisibility()) {
-                addVisibleRole(connection, apiID, substituteAPI.getVisibleRoles());
-            }
+                deleteVisibleRoles(connection, apiID); // Delete current visible roles if they exist
 
-            String wsdlUri = substituteAPI.getWsdlUri();
-            if (wsdlUri.isEmpty()) {
-                ApiResourceDAO.deleteUniqueResourceForCategory(connection, apiID, ResourceCategory.WSDL_URI);
-            } else {
-                if (!ApiResourceDAO.isResourceExistsForCategory(connection, apiID, ResourceCategory.WSDL_URI)) {
-                    ApiResourceDAO.addTextResource(connection, apiID, UUID.randomUUID().toString(),
-                            ResourceCategory.WSDL_URI, MediaType.TEXT_PLAIN, wsdlUri);
-                } else {
-                    ApiResourceDAO.updateTextValueForCategory(connection, apiID,
-                                                                        ResourceCategory.WSDL_URI, wsdlUri);
+                if (API.Visibility.RESTRICTED == substituteAPI.getVisibility()) {
+                    addVisibleRole(connection, apiID, substituteAPI.getVisibleRoles());
                 }
+
+                String wsdlUri = substituteAPI.getWsdlUri();
+                if (wsdlUri.isEmpty()) {
+                    ApiResourceDAO.deleteUniqueResourceForCategory(connection, apiID, ResourceCategory.WSDL_URI);
+                } else {
+                    if (!ApiResourceDAO.isResourceExistsForCategory(connection, apiID, ResourceCategory.WSDL_URI)) {
+                        ApiResourceDAO.addTextResource(connection, apiID, UUID.randomUUID().toString(),
+                                ResourceCategory.WSDL_URI, MediaType.TEXT_PLAIN, wsdlUri);
+                    } else {
+                        ApiResourceDAO.updateTextValueForCategory(connection, apiID,
+                                ResourceCategory.WSDL_URI, wsdlUri);
+                    }
+                }
+
+                deleteTransports(connection, apiID);
+                addTransports(connection, apiID, substituteAPI.getTransport());
+
+                deleteTagsMapping(connection, apiID); // Delete current tag mappings if they exist
+                addTagsMapping(connection, apiID, substituteAPI.getTags());
+
+                updateAPIDefinition(connection, apiID, substituteAPI.getApiDefinition());
+                deleteSubscriptionPolicies(connection, apiID);
+                addSubscriptionPolicies(connection, substituteAPI.getPolicies(), apiID);
+                deleteUrlMappings(connection, apiID);
+                addUrlMappings(connection, substituteAPI.getUriTemplates(), apiID);
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw new APIMgtDAOException(e);
             }
-
-            deleteTransports(connection, apiID);
-            addTransports(connection, apiID, substituteAPI.getTransport());
-
-            deleteTagsMapping(connection, apiID); // Delete current tag mappings if they exist
-            addTagsMapping(connection, apiID, substituteAPI.getTags());
-
-            updateAPIDefinition(connection, apiID, substituteAPI.getApiDefinition());
-            deleteSubscriptionPolicies(connection, apiID);
-            addSubscriptionPolicies(connection, substituteAPI.getPolicies(), apiID);
-            deleteUrlMappings(connection, apiID);
-            addUrlMappings(connection, substituteAPI.getUriTemplates(), apiID);
-            connection.commit();
         } catch (SQLException e) {
             throw new APIMgtDAOException(e);
         }
@@ -421,9 +433,15 @@ public class ApiDAOImpl implements ApiDAO {
         final String query = "DELETE FROM AM_API WHERE UUID = ?";
         try (Connection connection = DAOUtil.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setString(1, apiID);
-            statement.execute();
-            connection.commit();
+            try {
+                connection.setAutoCommit(false);
+                statement.setString(1, apiID);
+                statement.execute();
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw new APIMgtDAOException(e);
+            }
         } catch (SQLException e) {
             throw new APIMgtDAOException(e);
         }
@@ -452,9 +470,15 @@ public class ApiDAOImpl implements ApiDAO {
      * @throws APIMgtDAOException if error occurs while accessing data layer
      */
     @Override public void updateSwaggerDefinition(String apiID, String swaggerDefinition) throws APIMgtDAOException {
-        try {
-            Connection connection = DAOUtil.getConnection();
-            updateAPIDefinition(connection, apiID, swaggerDefinition);
+        try (Connection connection = DAOUtil.getConnection()) {
+            try {
+                connection.setAutoCommit(false);
+                updateAPIDefinition(connection, apiID, swaggerDefinition);
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw new APIMgtDAOException(e);
+            }
         } catch (SQLException e) {
             throw new APIMgtDAOException("Data access error when updating API definition", e);
         }
@@ -487,14 +511,20 @@ public class ApiDAOImpl implements ApiDAO {
     public void updateImage(String apiID, InputStream image, String dataType) throws APIMgtDAOException {
         if (image != null) {
             try (Connection connection = DAOUtil.getConnection()) {
-
-                if (!ApiResourceDAO.isResourceExistsForCategory(connection, apiID,
-                                                                    ResourceCategory.WSDL_URI)) {
-                    ApiResourceDAO.addBinaryResource(connection, apiID, UUID.randomUUID().toString(),
-                            ResourceCategory.IMAGE, dataType, image);
-                } else {
-                    ApiResourceDAO.updateBinaryResourceForCategory(connection, apiID,
-                                                                    ResourceCategory.IMAGE, image);
+                try {
+                    connection.setAutoCommit(false);
+                    if (!ApiResourceDAO.isResourceExistsForCategory(connection, apiID,
+                            ResourceCategory.WSDL_URI)) {
+                        ApiResourceDAO.addBinaryResource(connection, apiID, UUID.randomUUID().toString(),
+                                ResourceCategory.IMAGE, dataType, image);
+                    } else {
+                        ApiResourceDAO.updateBinaryResourceForCategory(connection, apiID,
+                                ResourceCategory.IMAGE, image);
+                    }
+                    connection.commit();
+                } catch (SQLException e) {
+                    connection.rollback();
+                    throw new APIMgtDAOException(e);
                 }
             } catch (SQLException e) {
                 throw new APIMgtDAOException(e);
@@ -514,9 +544,16 @@ public class ApiDAOImpl implements ApiDAO {
     final String query = "UPDATE AM_API SET CURRENT_LC_STATUS = ? WHERE UUID = ?";
         try (Connection connection = DAOUtil.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setString(1, status);
-            statement.setString(2, apiID);
-            statement.execute();
+            try {
+                connection.setAutoCommit(false);
+                statement.setString(1, status);
+                statement.setString(2, apiID);
+                statement.execute();
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw new APIMgtDAOException(e);
+            }
         } catch (SQLException e) {
             throw new APIMgtDAOException(e);
         }
@@ -593,10 +630,16 @@ public class ApiDAOImpl implements ApiDAO {
     @Override
     public void addDocumentInfo(String apiId, DocumentInfo documentInfo) throws APIMgtDAOException {
         try (Connection connection = DAOUtil.getConnection()) {
-            ApiResourceDAO.addResourceWithoutValue(connection, apiId, documentInfo.getId(), ResourceCategory.DOC);
-            DocMetaDataDAO.addDocumentInfo(connection, documentInfo);
+            try {
+                connection.setAutoCommit(false);
+                ApiResourceDAO.addResourceWithoutValue(connection, apiId, documentInfo.getId(), ResourceCategory.DOC);
+                DocMetaDataDAO.addDocumentInfo(connection, documentInfo);
 
-            connection.commit();
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw new APIMgtDAOException(e);
+            }
         } catch (SQLException e) {
             throw new APIMgtDAOException(e);
         }
@@ -612,8 +655,15 @@ public class ApiDAOImpl implements ApiDAO {
     @Override
     public void addDocumentFileContent(String resourceID, InputStream content) throws APIMgtDAOException {
         try (Connection connection = DAOUtil.getConnection()) {
-            if (ApiResourceDAO.updateBinaryResource(connection, resourceID, content) == 0) {
-                throw new APIMgtDAOException("Cannot add file content for a document that does not exist");
+            try {
+                connection.setAutoCommit(false);
+                if (ApiResourceDAO.updateBinaryResource(connection, resourceID, content) == 0) {
+                    throw new APIMgtDAOException("Cannot add file content for a document that does not exist");
+                }
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw new APIMgtDAOException(e);
             }
         } catch (SQLException e) {
             throw new APIMgtDAOException(e);
@@ -630,8 +680,15 @@ public class ApiDAOImpl implements ApiDAO {
     @Override
     public void addDocumentInlineContent(String resourceID, String content) throws APIMgtDAOException {
         try (Connection connection = DAOUtil.getConnection()) {
-            if (ApiResourceDAO.updateTextResource(connection, resourceID, content) == 0) {
-                throw new APIMgtDAOException("Cannot add inline content for a document that does not exist");
+            try {
+                connection.setAutoCommit(false);
+                if (ApiResourceDAO.updateTextResource(connection, resourceID, content) == 0) {
+                    throw new APIMgtDAOException("Cannot add inline content for a document that does not exist");
+                }
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw new APIMgtDAOException(e);
             }
         } catch (SQLException e) {
             throw new APIMgtDAOException(e);
@@ -647,7 +704,14 @@ public class ApiDAOImpl implements ApiDAO {
     @Override
     public void deleteDocument(String resourceID) throws APIMgtDAOException {
         try (Connection connection = DAOUtil.getConnection()) {
-            ApiResourceDAO.deleteResource(connection, resourceID);
+            try {
+                connection.setAutoCommit(false);
+                ApiResourceDAO.deleteResource(connection, resourceID);
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw new APIMgtDAOException(e);
+            }
         } catch (SQLException e) {
             throw new APIMgtDAOException(e);
         }
@@ -666,7 +730,7 @@ public class ApiDAOImpl implements ApiDAO {
     }
 
     private API constructAPIFromResultSet(Connection connection, PreparedStatement statement) throws SQLException,
-                                                                                                        IOException {
+            IOException {
         try (ResultSet rs = statement.executeQuery()) {
             while (rs.next()) {
                 BusinessInformation businessInformation = new BusinessInformation();
@@ -698,7 +762,7 @@ public class ApiDAOImpl implements ApiDAO {
                                 getTextValueForCategory(connection, apiPrimaryKey,
                                         ResourceCategory.WSDL_URI)).
                         transport(getTransports(connection, apiPrimaryKey)).
-                        apiDefinition(getAPIDefinition(connection, apiPrimaryKey)).
+                        apiDefinition(new StringBuilder(getAPIDefinition(connection, apiPrimaryKey))).
                         businessInformation(businessInformation).
                         lifecycleInstanceId(rs.getString("LIFECYCLE_INSTANCE_ID")).
                         lifeCycleStatus(rs.getString("CURRENT_LC_STATUS")).
@@ -707,8 +771,9 @@ public class ApiDAOImpl implements ApiDAO {
                         createdTime(rs.getTimestamp("CREATED_TIME").toLocalDateTime()).
                         lastUpdatedTime(rs.getTimestamp("LAST_UPDATED_TIME").toLocalDateTime()).
                         uriTemplates(getUriTemplates(connection, apiPrimaryKey)).
-                        policies(getSubscripitonPolciesByAPIId(connection, apiPrimaryKey)).
-                        build();
+                        policies(getSubscripitonPolciesByAPIId(connection, apiPrimaryKey)).parentApiId(rs.getString
+                        ("PARENT_API_ID")).
+                        buildApi();
             }
         }
 
@@ -724,7 +789,7 @@ public class ApiDAOImpl implements ApiDAO {
                         context(rs.getString("CONTEXT")).
                         description(rs.getString("DESCRIPTION")).
                         lifeCycleStatus(rs.getString("CURRENT_LC_STATUS")).lifecycleInstanceId(rs.getString
-                        ("LIFECYCLE_INSTANCE_ID")).build();
+                        ("LIFECYCLE_INSTANCE_ID")).buildApi();
             }
         }
 
@@ -740,7 +805,7 @@ public class ApiDAOImpl implements ApiDAO {
                         id(rs.getString("UUID")).
                         context(rs.getString("CONTEXT")).
                         description(rs.getString("DESCRIPTION")).
-                        lifeCycleStatus(rs.getString("CURRENT_LC_STATUS")).build();
+                        lifeCycleStatus(rs.getString("CURRENT_LC_STATUS")).buildApi();
 
                 apiList.add(apiSummary);
             }
@@ -838,8 +903,7 @@ public class ApiDAOImpl implements ApiDAO {
         return roles;
     }
 
-    private void addAPIDefinition(Connection connection, String apiID, String apiDefinition, String visibility)
-                                                                                                throws SQLException {
+    private void addAPIDefinition(Connection connection, String apiID, String apiDefinition) throws SQLException {
         if (!apiDefinition.isEmpty()) {
             ApiResourceDAO.addBinaryResource(connection, apiID, UUID.randomUUID().toString(), ResourceCategory.SWAGGER,
                     MediaType.APPLICATION_JSON,
@@ -1023,8 +1087,8 @@ public class ApiDAOImpl implements ApiDAO {
     }
 
     private List<String> getSubscripitonPolciesByAPIId(Connection connection, String apiId) throws SQLException {
-        final String query = "SELECT amPolcySub.NAME FROM AM_API_SUBSCRIPTION_POLICY_MAPPING as apimsubmapping," +
-                "AM_SUBSCRIPTION_POLICY as amPolcySub where apimsubmapping.SUBSCRIPTION_POLICY_ID=amPolcySub.UUID " +
+        final String query = "SELECT amPolcySub.NAME FROM AM_API_SUBSCRIPTION_POLICY_MAPPING apimsubmapping," +
+                "AM_SUBSCRIPTION_POLICY amPolcySub where apimsubmapping.SUBSCRIPTION_POLICY_ID=amPolcySub.UUID " +
                 "AND apimsubmapping.API_ID = ?";
         List<String> policies = new ArrayList<>();
         try (PreparedStatement statement = connection.prepareStatement(query)) {
@@ -1032,7 +1096,7 @@ public class ApiDAOImpl implements ApiDAO {
             statement.execute();
 
             try (ResultSet rs = statement.getResultSet()) {
-                if (rs.next()) {
+                while (rs.next()) {
                     policies.add(rs.getString("NAME"));
                 }
             }
@@ -1043,9 +1107,15 @@ public class ApiDAOImpl implements ApiDAO {
 
     void initResourceCategories() throws APIMgtDAOException {
         try (Connection connection = DAOUtil.getConnection()) {
-            if (!ResourceCategoryDAO.isStandardResourceCategoriesExist(connection)) {
-                ResourceCategoryDAO.addResourceCategories(connection);
-                connection.commit();
+            try {
+                if (!ResourceCategoryDAO.isStandardResourceCategoriesExist(connection)) {
+                    connection.setAutoCommit(false);
+                    ResourceCategoryDAO.addResourceCategories(connection);
+                    connection.commit();
+                }
+            } catch (SQLException e) {
+                connection.rollback();
+                throw new APIMgtDAOException(e);
             }
         } catch (SQLException e) {
             throw new APIMgtDAOException(e);

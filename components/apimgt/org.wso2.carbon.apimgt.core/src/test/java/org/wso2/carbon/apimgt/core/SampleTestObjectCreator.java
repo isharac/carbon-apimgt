@@ -18,7 +18,7 @@
  *
  */
 
-package org.wso2.carbon.apimgt.core.dao.impl;
+package org.wso2.carbon.apimgt.core;
 
 import org.wso2.carbon.apimgt.core.exception.APIManagementException;
 import org.wso2.carbon.apimgt.core.impl.APIDefinitionFromSwagger20;
@@ -28,6 +28,7 @@ import org.wso2.carbon.apimgt.core.models.BusinessInformation;
 import org.wso2.carbon.apimgt.core.models.CorsConfiguration;
 import org.wso2.carbon.apimgt.core.models.Endpoint;
 import org.wso2.carbon.apimgt.core.models.Environment;
+import org.wso2.carbon.apimgt.lifecycle.manager.core.impl.LifecycleState;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -37,7 +38,7 @@ import java.util.UUID;
 
 public class SampleTestObjectCreator {
 
-    static API.APIBuilder createDefaultAPI() {
+    public static API.APIBuilder createDefaultAPI() {
         List<String> transport = new ArrayList<>();
         transport.add("http");
         transport.add("https");
@@ -66,7 +67,7 @@ public class SampleTestObjectCreator {
                 context("weather").
                 description("Get Weather Info").
                 lifeCycleStatus("CREATED").
-                apiDefinition("{\"paths\":{\"/order\":{\"post\":{\"x-auth-type\":\"Application & Application User\"," +
+                apiDefinition(new StringBuilder("{\"paths\":{\"/order\":{\"post\":{\"x-auth-type\":\"Application & Application User\"," +
                         "\"x-throttling-tier\":\"Unlimited\",\"description\":\"Create a new Order\"," +
                         "\"parameters\":[{\"schema\":{\"$ref\":\"#/definitions/Order\"}," +
                         "\"description\":\"Order object that needs to be added\",\"name\":\"body\",\"required\":true," +
@@ -93,7 +94,7 @@ public class SampleTestObjectCreator {
                         "online pizza delivery store.\\n\",\"license\":{\"name\":\"Apache 2.0\"," +
                         "\"url\":\"http://www.apache.org/licenses/LICENSE-2.0.html\"}," +
                         "\"contact\":{\"email\":\"architecture@pizzashack.com\",\"name\":\"John Doe\"," +
-                        "\"url\":\"http://www.pizzashack.com\"},\"version\":\"1.0.0\"}}").
+                        "\"url\":\"http://www.pizzashack.com\"},\"version\":\"1.0.0\"}}")).
                 wsdlUri("").
                 isResponseCachingEnabled(false).
                 cacheTimeout(60).
@@ -119,7 +120,19 @@ public class SampleTestObjectCreator {
         return apiBuilder;
     }
 
-    static API.APIBuilder createAlternativeAPI() {
+    public static LifecycleState getMockLifecycleStateObject() {
+        LifecycleState lifecycleState = new LifecycleState();
+        lifecycleState.setLcName("API_LIFECYCLE");
+        lifecycleState.setLifecycleId("7a2298c4-c905-403f-8fac-38c73301631f");
+        lifecycleState.setState("PUBLISH");
+        return lifecycleState;
+    }
+
+    public static API getMockApiSummaryObject(){
+        return new API.APIBuilder("admin","Sample","1.0.0").buildApi();
+    }
+
+    public static API.APIBuilder createAlternativeAPI() {
         List<String> transport = new ArrayList<>();
         transport.add("http");
 
@@ -157,7 +170,7 @@ public class SampleTestObjectCreator {
                 context("yummy").
                 description("Get Food & Beverage Info").
                 lifeCycleStatus("CREATED").
-                apiDefinition("{\"paths\":{\"/order\":{\"post\":{\"x-auth-type\":\"Application & Application User\"," +
+                apiDefinition(new StringBuilder("{\"paths\":{\"/order\":{\"post\":{\"x-auth-type\":\"Application & Application User\"," +
                         "\"x-throttling-tier\":\"Unlimited\",\"description\":\"Create a new Order\"," +
                         "\"parameters\":[{\"schema\":{\"$ref\":\"#/definitions/Order\"}," +
                         "\"description\":\"Order object that needs to be added\",\"name\":\"body\",\"required\":true," +
@@ -184,7 +197,7 @@ public class SampleTestObjectCreator {
                         "online pizza delivery store.\\n\",\"license\":{\"name\":\"Apache 2.0\"," +
                         "\"url\":\"http://www.apache.org/licenses/LICENSE-2.0.html\"}," +
                         "\"contact\":{\"email\":\"architecture@pizzashack.com\",\"name\":\"John Doe\"," +
-                        "\"url\":\"http://www.pizzashack.com\"},\"version\":\"1.0.0\"}}").
+                        "\"url\":\"http://www.pizzashack.com\"},\"version\":\"1.0.0\"}}")).
                 wsdlUri("http://www.webservicex.net/globalweather.asmx?op=GetWeather?wsdl").
                 isResponseCachingEnabled(true).
                 cacheTimeout(120).
@@ -212,7 +225,16 @@ public class SampleTestObjectCreator {
         return apiBuilder;
     }
 
-    static Application createDefaultApplication(){
+    public static API copyAPISummary(API api) {
+        return new API.APIBuilder(api.getProvider(), api.getName(), api.getVersion()).
+                id(api.getId()).
+                context(api.getContext()).
+                description(api.getDescription()).
+                lifeCycleStatus(api.getLifeCycleStatus()).
+                lifecycleInstanceId(api.getLifecycleInstanceId()).buildApi();
+    }
+
+    public static Application createDefaultApplication(){
         //created by admin
         Application application = new Application("TestApp", "admin");
         application.setUuid(UUID.randomUUID().toString());
@@ -220,14 +242,14 @@ public class SampleTestObjectCreator {
         application.setDescription("This is a test application");
         application.setGroupId("groupx");
         application.setStatus("CREATED");
-        application.setTier("gold");
+        application.setTier("50PerMin");
         application.setCreatedTime(LocalDateTime.now());
         application.setUpdatedUser("admin");
         application.setUpdatedTime(LocalDateTime.now());
         return application;
     }
 
-    static Application createAlternativeApplication(){
+    public static Application createAlternativeApplication(){
         //created by admin and updated by admin2
         Application application = new Application("TestApp2", "admin");
         application.setUuid(UUID.randomUUID().toString());
@@ -235,20 +257,20 @@ public class SampleTestObjectCreator {
         application.setDescription("This is test application 2");
         application.setGroupId("groupx2");
         application.setStatus("APPROVED");
-        application.setTier("silver");
+        application.setTier("20PerMin");
         application.setUpdatedUser("admin2");
         application.setUpdatedTime(LocalDateTime.now());
         return application;
     }
 
-    static Application createCustomApplication(String applicationName, String owner){
+    public static Application createCustomApplication(String applicationName, String owner){
         Application application = new Application(applicationName, owner);
         application.setUuid(UUID.randomUUID().toString());
         application.setCallbackUrl("http://localhost/myapp");
         application.setDescription("This is a test application");
         application.setGroupId("groupx");
         application.setStatus("CREATED");
-        application.setTier("gold");
+        application.setTier("50PerMin");
         application.setCreatedTime(LocalDateTime.now());
         application.setUpdatedUser("admin");
         application.setUpdatedTime(LocalDateTime.now());

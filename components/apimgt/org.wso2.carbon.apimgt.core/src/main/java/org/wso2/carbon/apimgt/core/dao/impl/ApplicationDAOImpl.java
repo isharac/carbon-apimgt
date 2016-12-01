@@ -23,7 +23,7 @@ package org.wso2.carbon.apimgt.core.dao.impl;
 import org.wso2.carbon.apimgt.core.dao.ApplicationDAO;
 import org.wso2.carbon.apimgt.core.exception.APIMgtDAOException;
 import org.wso2.carbon.apimgt.core.models.Application;
-import org.wso2.carbon.apimgt.core.util.APIConstants;
+import org.wso2.carbon.apimgt.core.util.APIMgtConstants;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -49,19 +49,17 @@ public class ApplicationDAOImpl implements ApplicationDAO {
     /**
      * Retrieve a given instance of an Application
      *
-     * @param appId   The UUID that uniquely identifies an Application
-     * @param ownerId ID of the application owner.
+     * @param appId The UUID that uniquely identifies an Application
      * @return valid {@link Application} object or null
      * @throws APIMgtDAOException
      */
     @Override
-    public Application getApplication(String appId, String ownerId) throws APIMgtDAOException {
-        final String completeGetAppQuery = GET_APPS_QUERY + " WHERE UUID = ? AND CREATED_BY = ?";
+    public Application getApplication(String appId) throws APIMgtDAOException {
+        final String completeGetAppQuery = GET_APPS_QUERY + " WHERE UUID = ?";
         Application application;
         try (Connection conn = DAOUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(completeGetAppQuery)) {
             ps.setString(1, appId);
-            ps.setString(2, ownerId);
             try (ResultSet rs = ps.executeQuery()) {
                 application = this.createApplicationFromResultSet(rs);
             }
@@ -100,23 +98,21 @@ public class ApplicationDAOImpl implements ApplicationDAO {
      * Retrieves all available Applications that belong to a user.
      *
      * @param ownerId Username of user
-     * @return An array of {@link Application}
+     * @return A list of {@link Application}
      * @throws APIMgtDAOException
      */
     @Override
-    public Application[] getApplications(String ownerId) throws APIMgtDAOException {
+    public List<Application> getApplications(String ownerId) throws APIMgtDAOException {
         final String completeGetAppsQuery = GET_APPS_QUERY + " WHERE CREATED_BY = ?";
-        Application[] applications;
         try (Connection conn = DAOUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(completeGetAppsQuery)) {
             ps.setString(1, ownerId);
             try (ResultSet rs = ps.executeQuery()) {
-                applications = this.createApplicationsFromResultSet(rs);
+                return this.createApplicationsFromResultSet(rs);
             }
         } catch (SQLException ex) {
             throw new APIMgtDAOException(ex);
         }
-        return applications;
     }
 
     /**
@@ -194,16 +190,16 @@ public class ApplicationDAOImpl implements ApplicationDAO {
         try (Connection conn = DAOUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(addAppQuery)) {
             conn.setAutoCommit(false);
-            ps.setString(1, application.getUuid());
+            ps.setString(1, application.getId());
             ps.setString(2, application.getName());
             ps.setString(3, application.getTier());
             ps.setString(4, application.getCallbackUrl());
             ps.setString(5, application.getDescription());
 
-            if (APIConstants.DEFAULT_APPLICATION_NAME.equals(application.getName())) {
-                ps.setString(6, APIConstants.ApplicationStatus.APPLICATION_APPROVED);
+            if (APIMgtConstants.DEFAULT_APPLICATION_NAME.equals(application.getName())) {
+                ps.setString(6, APIMgtConstants.ApplicationStatus.APPLICATION_APPROVED);
             } else {
-                ps.setString(6, APIConstants.ApplicationStatus.APPLICATION_CREATED);
+                ps.setString(6, APIMgtConstants.ApplicationStatus.APPLICATION_CREATED);
             }
 
             ps.setString(7, application.getGroupId());
@@ -296,14 +292,13 @@ public class ApplicationDAOImpl implements ApplicationDAO {
         return false;
     }
 
-    private Application[] createApplicationsFromResultSet(ResultSet rs) throws SQLException, APIMgtDAOException {
+    private List<Application> createApplicationsFromResultSet(ResultSet rs) throws SQLException, APIMgtDAOException {
         List<Application> appList = new ArrayList<>();
         Application application;
         while ((application = createApplicationFromResultSet(rs)) != null) {
             appList.add(application);
         }
-        Application[] apps = new Application[appList.size()];
-        return appList.toArray(apps);
+        return appList;
     }
 
     private Application createApplicationFromResultSet(ResultSet rs) throws APIMgtDAOException, SQLException {
@@ -319,8 +314,8 @@ public class ApplicationDAOImpl implements ApplicationDAO {
             application.setCreatedTime(rs.getTimestamp("CREATED_TIME").toLocalDateTime());
             application.setUpdatedUser(rs.getString("UPDATED_BY"));
             application.setUpdatedTime(rs.getTimestamp("LAST_UPDATED_TIME").toLocalDateTime());
-            application.setTier(DAOFactory.getPolicyDAO().getSubscriptionTierName(
-                    rs.getString("APPLICATION_POLICY_ID")));
+            application.setTier(DAOFactory.getPolicyDAO().getApplicationPolicyById(
+                    rs.getString("APPLICATION_POLICY_ID")).getPolicyName());
         }
         return application;
     }

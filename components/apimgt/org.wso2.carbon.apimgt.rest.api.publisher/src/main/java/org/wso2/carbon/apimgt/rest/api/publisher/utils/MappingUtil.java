@@ -24,17 +24,22 @@ package org.wso2.carbon.apimgt.rest.api.publisher.utils;
 
 
 import org.wso2.carbon.apimgt.core.models.API;
+import org.wso2.carbon.apimgt.core.models.Application;
 import org.wso2.carbon.apimgt.core.models.BusinessInformation;
 import org.wso2.carbon.apimgt.core.models.CorsConfiguration;
 import org.wso2.carbon.apimgt.core.models.DocumentInfo;
 import org.wso2.carbon.apimgt.core.models.DocumentInfoResults;
+import org.wso2.carbon.apimgt.core.models.Subscription;
 import org.wso2.carbon.apimgt.rest.api.publisher.dto.APIDTO;
 import org.wso2.carbon.apimgt.rest.api.publisher.dto.APIInfoDTO;
 import org.wso2.carbon.apimgt.rest.api.publisher.dto.APIListDTO;
 import org.wso2.carbon.apimgt.rest.api.publisher.dto.API_businessInformationDTO;
 import org.wso2.carbon.apimgt.rest.api.publisher.dto.API_corsConfigurationDTO;
+import org.wso2.carbon.apimgt.rest.api.publisher.dto.ApplicationDTO;
 import org.wso2.carbon.apimgt.rest.api.publisher.dto.DocumentDTO;
 import org.wso2.carbon.apimgt.rest.api.publisher.dto.DocumentListDTO;
+import org.wso2.carbon.apimgt.rest.api.publisher.dto.SubscriptionDTO;
+import org.wso2.carbon.apimgt.rest.api.publisher.dto.SubscriptionListDTO;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,10 +66,10 @@ public class MappingUtil {
         apidto.setResponseCaching(Boolean.toString(api.isResponseCachingEnabled()));
         apidto.setCacheTimeout(api.getCacheTimeout());
         apidto.setVisibleRoles(api.getVisibleRoles());
-        apidto.setStatus(api.getLifeCycleStatus());
+        apidto.setLifeCycleStatus(api.getLifeCycleStatus());
         apidto.setTags(api.getTags());
         apidto.setTransport(api.getTransport());
-        api.getPolicies().forEach(apidto::addTiersItem);
+        api.getPolicies().forEach(apidto::addPoliciesItem);
         BusinessInformation businessInformation = api.getBusinessInformation();
         API_businessInformationDTO apiBusinessInformationDTO = new API_businessInformationDTO();
         apiBusinessInformationDTO.setBusinessOwner(businessInformation.getBusinessOwner());
@@ -106,20 +111,20 @@ public class MappingUtil {
         corsConfiguration.setAllowOrigins(apiCorsConfigurationDTO.getAccessControlAllowOrigins());
         corsConfiguration.setEnabled(apiCorsConfigurationDTO.getCorsConfigurationEnabled());
 
-		API.APIBuilder apiBuilder = new API.APIBuilder(apidto.getProvider(), apidto.getName(), apidto.getVersion()).
+        API.APIBuilder apiBuilder = new API.APIBuilder(apidto.getProvider(), apidto.getName(), apidto.getVersion()).
                 id(apidto.getId()).
                 context(apidto.getContext()).
                 description(apidto.getDescription()).
-                apiDefinition(apidto.getApiDefinition()).
-                lifeCycleStatus(apidto.getStatus()).
+                apiDefinition(new StringBuilder(apidto.getApiDefinition())).
+                lifeCycleStatus(apidto.getLifeCycleStatus()).
                 visibleRoles(apidto.getVisibleRoles()).
                 visibility(API.Visibility.valueOf(apidto.getVisibility().toString())).
-                policies(apidto.getTiers()).
+                policies(apidto.getPolicies()).
                 tags(apidto.getTags()).
                 transport(apidto.getTransport()).
                 cacheTimeout(apidto.getCacheTimeout()).
                 isResponseCachingEnabled(Boolean.valueOf(apidto.getResponseCaching())).
-                policies(apidto.getTiers()).
+                policies(apidto.getPolicies()).
                 businessInformation(businessInformation).
                 corsConfiguration(corsConfiguration);
         return apiBuilder;
@@ -140,7 +145,7 @@ public class MappingUtil {
             apiInfo.setDescription(apiSummary.getDescription());
             apiInfo.setName(apiSummary.getName());
             apiInfo.setProvider(apiSummary.getProvider());
-            apiInfo.setStatus(apiSummary.getLifeCycleStatus());
+            apiInfo.setLifeCycleStatus(apiSummary.getLifeCycleStatus());
             apiInfo.setVersion(apiSummary.getVersion());
             apiInfoList.add(apiInfo);
         }
@@ -221,5 +226,52 @@ public class MappingUtil {
             documentInfoResults.addDocumentInfo(toDocumentInfo(documentDTO));
         }
         return documentInfoResults;
+    }
+
+    /**
+     * This method convert {@link org.wso2.carbon.apimgt.core.models.Application} to {@link ApplicationDTO}
+     * return
+     */
+    public static ApplicationDTO toApplicationDto(Application application){
+        ApplicationDTO applicationDTO = new ApplicationDTO();
+        applicationDTO.setApplicationId(application.getId());
+        applicationDTO.setDescription(application.getDescription());
+        applicationDTO.setGroupId(application.getGroupId());
+        applicationDTO.setName(application.getName());
+        applicationDTO.setSubscriber(application.getCreatedUser());
+        applicationDTO.setThrottlingTier(application.getTier());
+        return applicationDTO;
+    }
+
+    /**
+     * Converts List<{@link Subscription}> into {@link SubscriptionListDTO}</>
+     * @param subscriptionList list of {@link Subscription}
+     * @param limit no of items to return
+     * @param offset
+     * @return
+     */
+    public static SubscriptionListDTO fromSubscriptionListToDTO(List<Subscription> subscriptionList, Integer limit,
+                                                                Integer offset) {
+        SubscriptionListDTO subscriptionListDTO = new SubscriptionListDTO();
+        for (Subscription subscription : subscriptionList) {
+            subscriptionListDTO.addListItem(fromSubscription(subscription));
+        }
+        return subscriptionListDTO;
+    }
+
+    /**
+     * Converts {@link Subscription} to {@link SubscriptionDTO}
+     * @param subscription
+     * @return
+     */
+    public static SubscriptionDTO fromSubscription(Subscription subscription) {
+        SubscriptionDTO subscriptionDTO = new SubscriptionDTO();
+        subscriptionDTO.setApplicationId(subscription.getId());
+        subscriptionDTO.setLifeCycleStatus(
+                SubscriptionDTO.LifeCycleStatusEnum.fromValue(subscription.getStatus().getStatus()));
+        subscriptionDTO.setApplicationId(subscription.getApplication().getId());
+        subscriptionDTO.setApiIdentifier(subscription.getApi().getId());
+        subscriptionDTO.setPolicy(subscription.getSubscriptionTier());
+        return subscriptionDTO;
     }
 }

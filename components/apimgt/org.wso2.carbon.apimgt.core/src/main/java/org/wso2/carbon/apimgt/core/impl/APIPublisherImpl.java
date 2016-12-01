@@ -28,16 +28,19 @@ import org.wso2.carbon.apimgt.core.api.APIPublisher;
 import org.wso2.carbon.apimgt.core.dao.APISubscriptionDAO;
 import org.wso2.carbon.apimgt.core.dao.ApiDAO;
 import org.wso2.carbon.apimgt.core.dao.ApplicationDAO;
+import org.wso2.carbon.apimgt.core.dao.PolicyDAO;
 import org.wso2.carbon.apimgt.core.exception.APIManagementException;
 import org.wso2.carbon.apimgt.core.exception.APIMgtDAOException;
 import org.wso2.carbon.apimgt.core.exception.APIMgtResourceNotFoundException;
 import org.wso2.carbon.apimgt.core.exception.ApiDeleteFailureException;
 import org.wso2.carbon.apimgt.core.exception.ExceptionCodes;
 import org.wso2.carbon.apimgt.core.models.API;
+import org.wso2.carbon.apimgt.core.models.APIStatus;
 import org.wso2.carbon.apimgt.core.models.DocumentInfo;
 import org.wso2.carbon.apimgt.core.models.LifeCycleEvent;
 import org.wso2.carbon.apimgt.core.models.Provider;
-import org.wso2.carbon.apimgt.core.util.APIConstants;
+import org.wso2.carbon.apimgt.core.models.Subscription;
+import org.wso2.carbon.apimgt.core.util.APIMgtConstants;
 import org.wso2.carbon.apimgt.core.util.APIUtils;
 import org.wso2.carbon.apimgt.lifecycle.manager.core.exception.LifecycleException;
 import org.wso2.carbon.apimgt.lifecycle.manager.core.impl.LifecycleState;
@@ -59,8 +62,8 @@ public class APIPublisherImpl extends AbstractAPIManager implements APIPublisher
     private static final Logger log = LoggerFactory.getLogger(APIPublisherImpl.class);
 
     public APIPublisherImpl(String username, ApiDAO apiDAO, ApplicationDAO applicationDAO, APISubscriptionDAO
-            apiSubscriptionDAO, APILifecycleManager apiLifecycleManager) {
-        super(username, apiDAO, applicationDAO, apiSubscriptionDAO, apiLifecycleManager);
+            apiSubscriptionDAO, PolicyDAO policyDAO, APILifecycleManager apiLifecycleManager) {
+        super(username, apiDAO, applicationDAO, apiSubscriptionDAO, policyDAO, apiLifecycleManager);
     }
 
     /**
@@ -141,7 +144,7 @@ public class APIPublisherImpl extends AbstractAPIManager implements APIPublisher
     public long getAPISubscriptionCountByAPI(String id) throws APIManagementException {
        long subscriptionCount = 0;
         try {
-            subscriptionCount =  getApiSubscriptionDAO().getAPISubscriptionCountByAPI(id);
+            subscriptionCount =  getApiSubscriptionDAO().getSubscriptionCountByAPI(id);
         } catch (APIMgtDAOException e) {
             APIUtils.logAndThrowException("Couldn't retrieve Subscriptions for API " + id, e, log);
         }
@@ -163,31 +166,6 @@ public class APIPublisherImpl extends AbstractAPIManager implements APIPublisher
     public String addAPI(API.APIBuilder apiBuilder) throws APIManagementException {
 
         API createdAPI;
-        if (StringUtils.isEmpty(apiBuilder.getId())) {
-            apiBuilder.id(UUID.randomUUID().toString());
-        }
-        if (StringUtils.isEmpty(apiBuilder.getApiDefinition())) {
-            APIUtils.logAndThrowException("Couldn't find swagger definition of API ", log);
-        }
-        if (StringUtils.isEmpty(apiBuilder.getName())) {
-            APIUtils.logAndThrowException("Couldn't find Name of API ", log);
-        }
-        if (StringUtils.isEmpty(apiBuilder.getContext())) {
-            APIUtils.logAndThrowException("Couldn't find Context of API ", log);
-        }
-        if (StringUtils.isEmpty(apiBuilder.getVersion())) {
-            APIUtils.logAndThrowException("Couldn't find Version of API ", log);
-        }
-        if (apiBuilder.getTransport().isEmpty()) {
-            APIUtils.logAndThrowException("Couldn't find Transport of API ", log);
-        }
-        if (apiBuilder.getPolicies().isEmpty()) {
-            APIUtils.logAndThrowException("Couldn't find Policies of API ", log);
-        }
-        //#todo we need to fix this there is a bug for now I am commenting this.
-//        if (apiBuilder.getVisibility() != null) {
-//            APIUtils.logAndThrowException("Couldn't find Visibility of API ", log);
-//        }
 
         apiBuilder.provider(getUsername());
         APIDefinition apiDefinition = new APIDefinitionFromSwagger20();
@@ -197,7 +175,7 @@ public class APIPublisherImpl extends AbstractAPIManager implements APIPublisher
         apiBuilder.lastUpdatedTime(localDateTime);
         try {
             if (!isApiNameExist(apiBuilder.getName()) && !isContextExist(apiBuilder.getContext())) {
-                LifecycleState lifecycleState = getApiLifecycleManager().addLifecycle(APIConstants.API_LIFECYCLE,
+                LifecycleState lifecycleState = getApiLifecycleManager().addLifecycle(APIMgtConstants.API_LIFECYCLE,
                         getUsername());
                 apiBuilder.associateLifecycle(lifecycleState);
                 createdAPI = apiBuilder.build();
@@ -205,13 +183,18 @@ public class APIPublisherImpl extends AbstractAPIManager implements APIPublisher
                 APIUtils.logDebug("API " + createdAPI.getName() + "-" + createdAPI.getVersion() + " was created " +
                         "successfully.", log);
             } else {
-                APIUtils.logAndThrowException("Duplicate API already Exist with name/Context " + apiBuilder.getName(),
-                        ExceptionCodes.API_ALREADY_EXISTS, log);
+                String message = "Duplicate API already Exist with name/Context " + apiBuilder.getName();
+                log.error(message);
+                throw new APIManagementException(message, ExceptionCodes.API_ALREADY_EXISTS);
             }
         } catch (APIMgtDAOException e) {
-            APIUtils.logAndThrowException("Error occurred while creating the API - " + apiBuilder.getName(), e, log);
+            log.error("Error occurred while creating the API - " + apiBuilder.getName());
+            throw new APIMgtDAOException("Error occurred while creating the API - " + apiBuilder.getName(),
+                    ExceptionCodes.APIMGT_DAO_EXCEPTION);
         } catch (LifecycleException e) {
-            APIUtils.logAndThrowException("Error occurred while Associating the API - " + apiBuilder.getName(), e, log);
+            log.error("Error occurred while Associating the API - " + apiBuilder.getName());
+            throw new APIManagementException("Error occurred while Associating the API - " + apiBuilder.getName(),
+                    ExceptionCodes.APIMGT_LIFECYCLE_EXCEPTION);
         }
         return apiBuilder.getId();
     }
@@ -315,6 +298,8 @@ public class APIPublisherImpl extends AbstractAPIManager implements APIPublisher
     @Override
     public void updateAPIStatus(String apiId, String status, Map<String, Boolean> checkListItemMap) throws
             APIManagementException {
+        boolean requireReSubscriptions = false;
+        boolean deprecateOlderVersion = false;
         try {
             API api = getApiDAO().getAPI(apiId);
             if (api != null) {
@@ -322,12 +307,47 @@ public class APIPublisherImpl extends AbstractAPIManager implements APIPublisher
                 apiBuilder.lifecycleState(getApiLifecycleManager().getCurrentLifecycleState(apiBuilder
                         .getLifecycleInstanceId()));
                 for (Map.Entry<String, Boolean> checkListItem : checkListItemMap.entrySet()) {
-                    apiBuilder.lifecycleState(getApiLifecycleManager().checkListItemEvent(api.getLifecycleInstanceId
-                            (), status, checkListItem.getKey(), checkListItem.getValue()));
+                    if (APIMgtConstants.DEPRECATE_PREVIOUS_VERSIONS.equals(checkListItem.getKey())) {
+                        deprecateOlderVersion = checkListItem.getValue();
+                    } else if (APIMgtConstants.REQUIRE_RE_SUBSCRIPTIONS.equals(checkListItem.getKey())) {
+                        requireReSubscriptions = checkListItem.getValue();
+                    } else {
+                        apiBuilder.lifecycleState(getApiLifecycleManager().checkListItemEvent(api.getLifecycleInstanceId
+                                (), status, checkListItem.getKey(), checkListItem.getValue()));
+                    }
                 }
                 API originalAPI = apiBuilder.build();
                 getApiLifecycleManager().executeLifecycleEvent(status, apiBuilder
                         .getLifecycleInstanceId(), getUsername(), originalAPI);
+                if (deprecateOlderVersion) {
+                    if (StringUtils.isNotEmpty(api.getParentApiId())) {
+                        API oldAPI = getApiDAO().getAPI(api.getParentApiId());
+                        if (oldAPI != null) {
+                            API.APIBuilder previousAPI = new API.APIBuilder(oldAPI);
+                            previousAPI.setLifecycleStateInfo(getApiLifecycleManager().getCurrentLifecycleState
+                                    (previousAPI.getLifecycleInstanceId()));
+                            getApiLifecycleManager().executeLifecycleEvent(APIStatus.DEPRECATED.getStatus(), previousAPI
+                                    .getLifecycleInstanceId(), getUsername(), previousAPI.build());
+                        }
+                    }
+                }
+                if (!requireReSubscriptions) {
+                    if (StringUtils.isNotEmpty(api.getParentApiId())) {
+                        List<Subscription> subscriptions = getApiSubscriptionDAO().getAPISubscriptionsByAPI(api
+                                .getParentApiId());
+                        List<Subscription> subscriptionList = new ArrayList<>();
+                        for (Subscription subscription : subscriptions) {
+                            if (api.getPolicies().contains(subscription.getSubscriptionTier())) {
+                                if (!APIMgtConstants.SubscriptionStatus.ON_HOLD.equals(subscription.getStatus())) {
+                                    subscriptionList.add(new Subscription(UUID.randomUUID().toString(), subscription
+                                            .getApplication(), subscription.getApi(), subscription
+                                            .getSubscriptionTier()));
+                                }
+                            }
+                            getApiSubscriptionDAO().copySubscriptions(subscriptionList);
+                        }
+                    }
+                }
             } else {
                 throw new APIMgtResourceNotFoundException("Requested API " + apiId + " Not Available");
             }
@@ -358,8 +378,9 @@ public class APIPublisherImpl extends AbstractAPIManager implements APIPublisher
                 apiBuilder.id(UUID.randomUUID().toString());
                 apiBuilder.version(newVersion);
                 apiBuilder.context(api.getContext().replace(api.getVersion(), newVersion));
-                lifecycleState = getApiLifecycleManager().addLifecycle(APIConstants.API_LIFECYCLE, getUsername());
+                lifecycleState = getApiLifecycleManager().addLifecycle(APIMgtConstants.API_LIFECYCLE, getUsername());
                 apiBuilder.associateLifecycle(lifecycleState);
+                apiBuilder.parentApiId(api.getParentApiId());
                 getApiDAO().addAPI(apiBuilder.build());
                 newVersionedId = apiBuilder.getId();
             } else {
@@ -447,6 +468,30 @@ public class APIPublisherImpl extends AbstractAPIManager implements APIPublisher
             APIUtils.logAndThrowException("Couldn't get APISummary for " + apiId, e, log);
         }
         return status;
+    }
+
+    /**
+     * Checks if a given API Context exists in the registry
+     *
+     * @param context
+     * @return boolean result
+     * @throws APIManagementException
+     */
+    @Override
+    public boolean checkIfAPIContextExists(String context) throws APIManagementException {
+        return isContextExist(context);
+    }
+
+    /**
+     * Checks if a given API name exists in the registry
+     *
+     * @param name
+     * @return boolean result
+     * @throws APIManagementException
+     */
+    @Override
+    public boolean checkIfAPINameExists(String name) throws APIManagementException {
+        return isApiNameExist(name);
     }
 
     /**
@@ -576,7 +621,8 @@ public class APIPublisherImpl extends AbstractAPIManager implements APIPublisher
      * @throws APIManagementException If failed to update subscription status
      */
     @Override
-    public void updateSubscription(String apiId, String subStatus, int appId) throws APIManagementException {
+    public void updateSubscription(String apiId, APIMgtConstants.SubscriptionStatus subStatus, String appId) throws
+            APIManagementException {
 
     }
 
@@ -619,34 +665,6 @@ public class APIPublisherImpl extends AbstractAPIManager implements APIPublisher
             APIUtils.logAndThrowException("Couldn't retrieve API Lifecycle for " + apiId, e, log);
         }
         return null;
-    }
-
-
-    /**
-     * Update api related information such as database entries, registry updates for state change.
-     *
-     * @param identifier
-     * @param newStatus  accepted if changes are not pushed to a gateway
-     * @param deprecateOlderVersions
-     *@param requireReSubscriptions @return boolean value representing success not not
-     * @throws APIManagementException
-     */
-    @Override
-    public void updateAPIForStateChange(String identifier, String newStatus, boolean deprecateOlderVersions, boolean
-            requireReSubscriptions) throws
-            APIManagementException {
-        try {
-            getApiDAO().changeLifeCycleStatus(identifier, newStatus);
-            if (deprecateOlderVersions) {
-                getApiDAO().deprecateOlderVersions(identifier);
-            }
-            if (!requireReSubscriptions) {
-                getApiSubscriptionDAO().copySubscriptions(identifier);
-            }
-
-        } catch (APIMgtDAOException e) {
-            APIUtils.logAndThrowException("Couldn't change the API Status to " + newStatus, e, log);
-        }
     }
 
     /**
@@ -704,5 +722,25 @@ public class APIPublisherImpl extends AbstractAPIManager implements APIPublisher
             APIUtils.logAndThrowException("Couldn't retrieve thumbnail for api " + apiId, e, log);
         }
         return null;
+    }
+
+    @Override
+    public Subscription getSubscriptionByUUID(String subId) throws APIManagementException {
+        try {
+            return getApiSubscriptionDAO().getAPISubscription(subId);
+        } catch (APIMgtDAOException e) {
+            throw new APIManagementException("Couldn't retrieve subscription for id " + subId);
+        }
+    }
+
+    @Override
+    public void updateApiGatewayConfig(String apiId, String configString) throws APIManagementException {
+        //TODO implement logic here
+    }
+
+    @Override
+    public String getApiGatewayConfig(String apiId) throws APIManagementException {
+        //TODO implement logic here
+        return "Not yet implement";
     }
 }
