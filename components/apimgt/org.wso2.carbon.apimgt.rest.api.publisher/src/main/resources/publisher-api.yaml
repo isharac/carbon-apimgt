@@ -1679,7 +1679,7 @@ paths:
           required: true
           schema:
             $ref: '#/definitions/Tier'
-        - $ref: '#/parameters/tierLevel'
+        - $ref: '#/parameters/tierLevel-Q'
         - $ref: '#/parameters/Content-Type'
       tags:
         - Throttling Tier (Collection)
@@ -1805,7 +1805,7 @@ paths:
           required: true
           schema:
             $ref: '#/definitions/Tier'
-        - $ref: '#/parameters/tierLevel'
+        - $ref: '#/parameters/tierLevel-Q'
         - $ref: '#/parameters/Content-Type'
         - $ref: '#/parameters/If-Match'
         - $ref: '#/parameters/If-Unmodified-Since'
@@ -1875,7 +1875,7 @@ paths:
         * This is only effective when Advanced Throttling is disabled in the Server. If enabled, we need to use Admin REST API for throttling tiers modification related operations.
       parameters:
         - $ref: '#/parameters/tierName'
-        - $ref: '#/parameters/tierLevel'
+        - $ref: '#/parameters/tierLevel-Q'
         - $ref: '#/parameters/If-Match'
         - $ref: '#/parameters/If-Unmodified-Since'
       tags:
@@ -1916,7 +1916,7 @@ paths:
         This operation can be used to update tier permissions which controls access for the particular tier based on the subscribers' roles.
       parameters:
         - $ref: '#/parameters/tierName-Q'
-        - $ref: '#/parameters/tierLevel-Q'
+        - $ref: '#/parameters/tierLevel'
         - $ref: '#/parameters/If-Match'
         - $ref: '#/parameters/If-Unmodified-Since'
         - in: body
@@ -2138,8 +2138,6 @@ parameters:
     type: string
     enum:
       - api
-      - application
-      - resource
     required: true
 
 # Used for pagination:
