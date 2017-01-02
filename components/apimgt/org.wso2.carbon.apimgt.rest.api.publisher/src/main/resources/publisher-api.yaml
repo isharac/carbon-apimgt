@@ -1918,7 +1918,7 @@ paths:
         This operation can be used to update tier permissions which controls access for the particular tier based on the subscribers' roles.
       parameters:
         - $ref: '#/parameters/tierName-Q'
-        - $ref: '#/parameters/tierLevel'
+        - $ref: '#/parameters/tierLevel-Q'
         - $ref: '#/parameters/If-Match'
         - $ref: '#/parameters/If-Unmodified-Since'
         - in: body
@@ -2132,8 +2132,8 @@ parameters:
 
 # Tier Type
 # Specified as part of the path expression
-  tierLevel:
-    name: tierLevel-A
+  tierLevel-A:
+    name: tierLevel
     in: path
     description: |
       List API or Application or Resource type tiers.
