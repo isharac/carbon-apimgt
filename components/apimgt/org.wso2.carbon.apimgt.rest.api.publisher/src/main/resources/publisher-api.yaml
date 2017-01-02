@@ -1679,7 +1679,7 @@ paths:
           required: true
           schema:
             $ref: '#/definitions/Tier'
-        - $ref: '#/parameters/tierLevel'
+        - $ref: '#/parameters/tierLevel-A'
         - $ref: '#/parameters/Content-Type'
       tags:
         - Throttling Tier (Collection)
@@ -1734,6 +1734,8 @@ paths:
       summary: Get details of a tier
       description: |
         This operation can be used to retrieve details of a single tier by specifying the tier level and tier name.
+        Note that the scope of the API is mandatory while retreiving the access token with the following cURL command : `curl -k -d \"grant_type=password&username=username&password=password&scope=apim:tier_view\" -H \"Authorization: Basic <token>\" https://127.0.0.1:8243/token`.
+        You will receive the access token as the response, for example `"access_token":"8644c013-7ff1-3217-b150-d7b92cae6be7"`.
       parameters:
         - $ref: '#/parameters/tierName'
         - $ref: '#/parameters/tierLevel'
@@ -1805,7 +1807,7 @@ paths:
           required: true
           schema:
             $ref: '#/definitions/Tier'
-        - $ref: '#/parameters/tierLevel'
+        - $ref: '#/parameters/tierLevel-A'
         - $ref: '#/parameters/Content-Type'
         - $ref: '#/parameters/If-Match'
         - $ref: '#/parameters/If-Unmodified-Since'
@@ -1875,7 +1877,7 @@ paths:
         * This is only effective when Advanced Throttling is disabled in the Server. If enabled, we need to use Admin REST API for throttling tiers modification related operations.
       parameters:
         - $ref: '#/parameters/tierName'
-        - $ref: '#/parameters/tierLevel'
+        - $ref: '#/parameters/tierLevel-A'
         - $ref: '#/parameters/If-Match'
         - $ref: '#/parameters/If-Unmodified-Since'
       tags:
@@ -2129,6 +2131,18 @@ parameters:
     required: true
 
 # Tier Type
+# Specified as part of the path expression
+  tierLevel-A:
+    name: tierLevel
+    in: path
+    description: |
+      List API or Application or Resource type tiers.
+    type: string
+    enum:
+      - api
+    required: true
+
+# Tier Type
 # Specified as part of the query string
   tierLevel-Q:
     name: tierLevel
@@ -2306,15 +2320,19 @@ definitions:
         example: 01234567-0123-0123-0123-012345678901
       name:
         type: string
+        description: Name of the API
         example: CalculatorAPI
       description:
         type: string
+        description: A brief description about the API
         example: A calculator API that supports basic operations
       context:
         type: string
+        description: A string that represents the context of the user's request
         example: CalculatorAPI
       version:
         type: string
+        description: The version of the API
         example: 1.0.0
       provider:
         description: |
@@ -2333,6 +2351,7 @@ definitions:
         example: "http://www.webservicex.com/globalweather.asmx?wsdl"
       status:
         type: string
+        description: This describes in which status of the lifecycle the API is
         example: CREATED
       responseCaching:
         type: string
@@ -2355,11 +2374,13 @@ definitions:
         example: ["http","https"]
       tags:
         type: array
+        description: Search keywords related to the API
         items:
           type: string
         example: ["substract","add"]
       tiers:
         type: array
+        description: The subscription tiers selected for the particular API
         items:
           type: string
         example: ["Unlimited"]
@@ -2386,6 +2407,7 @@ definitions:
         example: PUBLIC
       visibleRoles:
         type: array
+        description: The user roles that are able to access the API
         items:
           type: string
         example: []
