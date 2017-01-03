@@ -38,7 +38,7 @@
         example is shown below,
     </p>
 
-    <div class="pre"><code class="bash">curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d @payload.json http://localhost:9763/client-registration/v0.10/register</code></div>
+    <div class="pre"><code class="bash">curl -k -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d @payload.json https://localhost:9443/client-registration/v0.10/register</code></div>
     <br/>
 
     <p>
@@ -47,7 +47,7 @@
 
     <div class="pre"><code class="json">{
     "callbackUrl": "www.google.lk",
-    "clientName": "rest_api_store",
+    "clientName": "rest_api_admin",
     "tokenScope": "Production",
     "owner": "admin",
     "grantType": "password refresh_token",
@@ -60,29 +60,24 @@
     </p>
 
     <div class="pre"><code class="json">{
-    "callBackURL": "www.google.lk",
-    "jsonString":
-    "{
-    \"username\":\"admin\",
-    \"redirect_uris\":\"www.google.lk\",
-    \"tokenScope\":[Ljava.lang.String;@3a73796a,
-    \"client_name\":\"admin_rest_api_store\",
-    \"grant_types\":\"authorization_code password refresh_token iwa:ntlm
-    urn:ietf:params:oauth:grant-type:saml2-bearer client_credentialsimplicit\"
-    }",
-    "clientName": null,
-    "clientId": "HfEl1jJPdg5tbtrxhAwybN05QGoa",
-    "clientSecret": "l6c0aoLcWR3fwezHhc7XoGOht5Aa"
-}</code></div>
+        "appOwner": null,
+        "clientName": null,
+        "callBackURL": "www.google.lk",
+        "isSaasApplication": true,
+        "jsonString": "{\"username\":\"admin\",\"redirect_uris\":\"www.google.lk\",\"client_name\":\"admin_rest_api_admin\",\"grant_types\":\"urn:ietf:params:oauth:grant-type:saml2-bearer iwa:ntlm implicit refresh_token client_credentials authorization_code password\"}",
+        "clientId": "HfEl1jJPdg5tbtrxhAwybN05QGoa",
+        "clientSecret": "l6c0aoLcWR3fwezHhc7XoGOht5Aa"
+        }</code></div>
     <br/>
 
     <p>
         During the API invocation process request, click the CXF handler first, which calls an introspection API to
         validate the token. Generate the access token using the already created OAuth application. A sample call to
-        generate the access token is shown below.
+        generate the access token is shown below. You need to use base64 encoded (clientId:clientSecret) 
+        as the "Authorization: Basic" header.
     </p>
 
-    <div class="pre"><code class="bash">curl -k -d "grant_type=password&username=admin&password=admin&scope=apim:subscribe" -H "Authorization: Basic SGZFbDFqSlBkZzV0YnRyeGhBd3liTjA1UUdvYTpsNmMwYW9MY1dSM2Z3ZXpIaGM3WG9HT2h0NUFh" https://127.0.0.1:8243/token</code></div>
+    <div class="pre"><code class="bash">curl -k -d "grant_type=password&username=admin&password=admin&scope=apim:tier_view" -H "Authorization: Basic SGZFbDFqSlBkZzV0YnRyeGhBd3liTjA1UUdvYTpsNmMwYW9MY1dSM2Z3ZXpIaGM3WG9HT2h0NUFh" https://localhost:8243/token</code></div>
     <br/>
 
     <p>
@@ -90,7 +85,7 @@
     </p>
 
     <div class="pre"><code class="json">{
-    "scope":"apim:subscribe",
+    "scope":"apim:tier_view",
     "token_type":"Bearer",
     "expires_in":3600,
     "refresh_token":"33c3be152ebf0030b3fb76f2c1f80bf8",

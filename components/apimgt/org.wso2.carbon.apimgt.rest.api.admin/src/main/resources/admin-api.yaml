@@ -78,7 +78,7 @@ x-wso2-security:
 ######################################################
 paths:
 ######################################################
-# The "Application Throttle Policy Collection" resource API
+# The "Application Throttling Policy Collection" resource API
 ######################################################
   '/throttling/policies/application':
 
@@ -86,16 +86,21 @@ paths:
 # Retrieve all Application level policies
 #-----------------------------------------------------
     get:
+      x-wso2-curl: "curl -k -H \"Authorization: Bearer e59e2657-4c2a-3cd0-8b48-0f4f39940c41\" https://localhost:9443/api/am/admin/v0.10/throttling/policies/application"
+      x-wso2-request: |
+        GET https://localhost:9443/api/am/admin/v0.10/throttling/policies/application
+        Authorization: Bearer e59e2657-4c2a-3cd0-8b48-0f4f39940c41
+      x-wso2-response: "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\r\n  \"count\": 4,\r\n  \"list\": [\r\n    {\r\n      \"policyId\": \"aef4447a-f996-4b3c-9c47-d0a401ab913c\",\r\n      \"policyName\": \"50PerMin\",\r\n      \"displayName\": \"50PerMin\",\r\n      \"description\": \"Allows 50 request per minute\",\r\n      \"isDeployed\": true,\r\n      \"defaultLimit\": {\r\n        \"type\": \"RequestCountLimit\",\r\n        \"timeUnit\": \"min\",\r\n        \"unitTime\": 1,\r\n        \"requestCount\": 50\r\n      }\r\n    },\r\n    {\r\n      \"policyId\": \"472b573d-b162-4ac9-9984-531ee03d9d7c\",\r\n      \"policyName\": \"20PerMin\",\r\n      \"displayName\": \"20PerMin\",\r\n      \"description\": \"Allows 20 request per minute\",\r\n      \"isDeployed\": true,\r\n      \"defaultLimit\": {\r\n        \"type\": \"RequestCountLimit\",\r\n        \"timeUnit\": \"min\",\r\n        \"unitTime\": 1,\r\n        \"requestCount\": 20\r\n      }\r\n    },\r\n    {\r\n      \"policyId\": \"251d4f70-29f8-40f4-8aad-f2d1e7b8cfc2\",\r\n      \"policyName\": \"10PerMin\",\r\n      \"displayName\": \"10PerMin\",\r\n      \"description\": \"Allows 10 request per minute\",\r\n      \"isDeployed\": true,\r\n      \"defaultLimit\": {\r\n        \"type\": \"RequestCountLimit\",\r\n        \"timeUnit\": \"min\",\r\n        \"unitTime\": 1,\r\n        \"requestCount\": 10\r\n      }\r\n    },\r\n    {\r\n      \"policyId\": \"aaaef257-5453-42e6-b4a6-c48567864f92\",\r\n      \"policyName\": \"Unlimited\",\r\n      \"displayName\": \"Unlimited\",\r\n      \"description\": \"Allows unlimited requests\",\r\n      \"isDeployed\": true,\r\n      \"defaultLimit\": {\r\n        \"type\": \"RequestCountLimit\",\r\n        \"timeUnit\": \"min\",\r\n        \"unitTime\": 1,\r\n        \"requestCount\": 2147483647\r\n      }\r\n    }\r\n  ]\r\n}\r\n"
       x-scope: apim:tier_view
-      summary: Get all Application level throttle policies
+      summary: Get all Application Throttling Policies
       description: |
-        Get all Application level throttle policies
+        Retrieves all existing application throttling policies.
       parameters:
         - $ref: '#/parameters/Accept'
         - $ref: '#/parameters/If-None-Match'
         - $ref: '#/parameters/If-Modified-Since'
       tags:
-        - Application Policies
+        - Application Policies (Collection)
       responses:
         200:
           description: |
@@ -110,18 +115,17 @@ paths:
               type: string
             ETag:
               description: |
-                Entity Tag of the response resource.
-                Used by caches, or in conditional requests.
+                Entity Tag of the response resource. Used by caches, or in conditional requests (Will be supported in future).
               type: string
             Last-Modified:
               description: |
                 Date and time the resource has been modifed the last time.
-                Used by caches, or in conditional reuquests.
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
         304:
           description: |
             Not Modified.
-            Empty body because the client has already the latest version of the requested resource.
+            Empty body because the client has already the latest version of the requested resource (Will be supported in future).
         406:
           description: |
             Not Acceptable.
@@ -130,13 +134,16 @@ paths:
             $ref: '#/definitions/Error'
 
 #-----------------------------------------------------
-# Add a Application level throttle policy
+# Add a Application level Throttling Policy
 #-----------------------------------------------------  
     post:
+      x-wso2-curl: "curl -k -H \"Authorization: Bearer 0c6439fd-9b16-3c2e-be6e-1086e0b9aa93\" -H \"Content-Type: application/json\" https://localhost:9443/api/am/admin/v0.10/throttling/policies/application -d @data.json"
+      x-wso2-request: "POST https://localhost:9443/api/am/admin/v0.10/throttling/policies/application\r\nAuthorization: Bearer 0c6439fd-9b16-3c2e-be6e-1086e0b9aa93\r\nContent-Type: application/json\r\n\r\n{\r\n  \"policyName\": \"1PerMin\",\r\n  \"displayName\": \"1PerMin\",\r\n  \"description\": \"Allows 1 request per minute\",\r\n  \"defaultLimit\": {\r\n    \"type\": \"RequestCountLimit\",\r\n    \"timeUnit\": \"min\",\r\n    \"unitTime\": 1,\r\n    \"requestCount\": 1\r\n  }\r\n}"
+      x-wso2-response: "HTTP/1.1 201 Created\r\nLocation: https://localhost:9443/api/am/admin/v0.10/throttling/policies/application/f7becc49-9cc1-463f-bc2b-fc4c82582479\r\nContent-Type: application/json\r\n\r\n{\r\n  \"policyId\": \"f7becc49-9cc1-463f-bc2b-fc4c82582479\",\r\n  \"policyName\": \"1PerMin\",\r\n  \"displayName\": \"1PerMin\",\r\n  \"description\": \"Allows 1 request per minute\",\r\n  \"isDeployed\": true,\r\n  \"defaultLimit\": {\r\n    \"type\": \"RequestCountLimit\",\r\n    \"timeUnit\": \"min\",\r\n    \"unitTime\": 1,\r\n    \"requestCount\": 1\r\n  }\r\n}"
       x-scope: apim:tier_manage
-      summary: Add an Application level throttle policy
+      summary: Add an Application Throttling Policy
       description: |
-        Add an Application level throttle policy
+        This operation can be used to add a new application level throttling policy.
       parameters:
         - in: body
           name: body
@@ -147,7 +154,7 @@ paths:
             $ref: '#/definitions/ApplicationThrottlePolicy'
         - $ref: '#/parameters/Content-Type'
       tags:
-        - Application Policies
+        - Application Policies (Collection)
       responses:
         201:
           description: |
@@ -168,7 +175,7 @@ paths:
             ETag:
               description: |
                 Entity Tag of the response resource.
-                Used by caches, or in conditional request'
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
         400:
           description: |
@@ -182,7 +189,7 @@ paths:
             The entity of the request was in a not supported format.
 
 ######################################################
-# The "Individual Application Throttle Policy" resource API
+# The "Individual Application Throttling Policy" resource API
 ######################################################
   '/throttling/policies/application/{policyId}': 
   
@@ -190,16 +197,21 @@ paths:
 # Retrieve a certain Application Policy
 #-----------------------------------------------------
     get:
+      x-wso2-curl: "curl -k -H \"Authorization: Bearer 0c6439fd-9b16-3c2e-be6e-1086e0b9aa93\" https://localhost:9443/api/am/admin/v0.10/throttling/policies/application/6fc88136-dd36-4e81-ac6c-746225c5001b"
+      x-wso2-request: |
+        GET https://localhost:9443/api/am/admin/v0.10/throttling/policies/application/6fc88136-dd36-4e81-ac6c-746225c5001b
+        Authorization: Bearer 0c6439fd-9b16-3c2e-be6e-1086e0b9aa93
+      x-wso2-response: "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\r\n  \"policyId\": \"6fc88136-dd36-4e81-ac6c-746225c5001b\",\r\n  \"policyName\": \"10PerMwin\",\r\n  \"displayName\": \"10PerwMin\",\r\n  \"description\": \"Allows 10 request per minute\",\r\n  \"isDeployed\": true,\r\n  \"defaultLimit\": {\r\n    \"type\": \"RequestCountLimit\",\r\n    \"timeUnit\": \"min\",\r\n    \"unitTime\": 1,\r\n    \"requestCount\": 10\r\n  }\r\n}\r\n"
       x-scope: apim:tier_view
-      summary: Retrieve an Application Policy
+      summary: Get an Application Policy
       description: |
-        Retrieve an Application Policy providing the policy name.
+        Retrieves an Application Policy.
       parameters:
         - $ref: '#/parameters/policyId'
         - $ref: '#/parameters/If-None-Match'
         - $ref: '#/parameters/If-Modified-Since'
       tags:
-        - Application Policies
+        - Application Policies (Individual)
       responses:
         200:
           description: |
@@ -215,17 +227,17 @@ paths:
             ETag:
               description: |
                 Entity Tag of the response resource.
-                Used by caches, or in conditional requests.
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
             Last-Modified:
               description: |
                 Date and time the resource has been modifed the last time.
-                Used by caches, or in conditional reuquests.
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
         304:
           description: |
             Not Modified.
-            Empty body because the client has already the latest version of the requested resource.
+            Empty body because the client has already the latest version of the requested resource (Will be supported in future).
         404:
           description: |
             Not Found.
@@ -240,19 +252,24 @@ paths:
             $ref: '#/definitions/Error'
 
 #-----------------------------------------------------
-# Delete an Application level throttle policy
+# Delete an Application level throttling policy
 #-----------------------------------------------------  
     delete:
+      x-wso2-curl: "curl -k -X DELETE -H \"Authorization: Bearer 0d63e133-7ad6-3aeb-9ca9-9299e0708122\" https://localhost:9443/api/am/admin/v0.10/throttling/policies/application/f7becc49-9cc1-463f-bc2b-fc4c82582479"
+      x-wso2-request: |
+        DELETE https://localhost:9443/api/am/admin/v0.10/throttling/policies/application/f7becc49-9cc1-463f-bc2b-fc4c82582479
+        Authorization: Bearer 0d63e133-7ad6-3aeb-9ca9-9299e0708122
+      x-wso2-response: "HTTP/1.1 200 OK"
       x-scope: apim:tier_manage
-      summary: Delete an Application level throttle policy
+      summary: Delete an Application Throttling policy
       description: |
-        Delete an Application level throttle policy
+        Deletes an Application level throttling policy.
       parameters:
         - $ref: '#/parameters/policyId'
         - $ref: '#/parameters/If-Match'
         - $ref: '#/parameters/If-Unmodified-Since'
       tags:
-        - Application Policies
+        - Application Policies (Individual)
       responses:
         200:
           description: |
@@ -267,18 +284,21 @@ paths:
         412:
           description: |
             Precondition Failed.
-            The request has not been performed because one of the preconditions is not met.
+            The request has not been performed because one of the preconditions is not met (Will be supported in future).
           schema:
             $ref: '#/definitions/Error'
 
 #-----------------------------------------------------
-# Update an Application throttle policy
+# Update an Application throttling policy
 #-----------------------------------------------------
     put:
+      x-wso2-curl: "curl -k -X PUT -H \"Authorization: Bearer 0c6439fd-9b16-3c2e-be6e-1086e0b9aa93\" -H \"Content-Type: application/json\" https://localhost:9443/api/am/admin/v0.10/throttling/policies/application/f7becc49-9cc1-463f-bc2b-fc4c82582479 -d @data.json"
+      x-wso2-request: "PUT https://localhost:9443/api/am/admin/v0.10/throttling/policies/application/f7becc49-9cc1-463f-bc2b-fc4c82582479\r\nAuthorization: Bearer 0c6439fd-9b16-3c2e-be6e-1086e0b9aa93\r\nContent-Type: application/json\r\n\r\n{\r\n  \"policyName\": \"1PerMin\",\r\n  \"displayName\": \"1PerMin\",\r\n  \"description\": \"Allows single request per minute\",\r\n  \"defaultLimit\": {\r\n    \"type\": \"RequestCountLimit\",\r\n    \"timeUnit\": \"min\",\r\n    \"unitTime\": 1,\r\n    \"requestCount\": 1\r\n  }\r\n}"
+      x-wso2-response: "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\r\n  \"policyId\": \"f7becc49-9cc1-463f-bc2b-fc4c82582479\",\r\n  \"policyName\": \"1PerMin\",\r\n  \"displayName\": \"1PerMin\",\r\n  \"description\": \"Allows single request per minute\",\r\n  \"isDeployed\": true,\r\n  \"defaultLimit\": {\r\n    \"type\": \"RequestCountLimit\",\r\n    \"timeUnit\": \"min\",\r\n    \"unitTime\": 1,\r\n    \"requestCount\": 1\r\n  }\r\n}"
       x-scope: apim:tier_manage
-      summary: Update an Application level throttle policy
+      summary: Update an Application Throttling policy
       description: |
-        Update an Application level throttle policy
+        Updates an existing Application level throttling policy. Upon succesfull, you will receive the updated application policy as the response.
       parameters:
         - $ref: '#/parameters/policyId'
         - in: body
@@ -292,7 +312,7 @@ paths:
         - $ref: '#/parameters/If-Match'
         - $ref: '#/parameters/If-Unmodified-Since'
       tags:
-        - Application Policies
+        - Application Policies (Individual)
       responses:
         200:
           description: |
@@ -312,12 +332,12 @@ paths:
             ETag:
               description: |
                 Entity Tag of the response resource.
-                Used by caches, or in conditional request.
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
             Last-Modified:
               description: |
                 Date and time the resource has been modifed the last time.
-                Used by caches, or in conditional reuquests.
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
         400:
           description: |
@@ -334,14 +354,14 @@ paths:
         412:
           description: |
             Precondition Failed.
-            The request has not been performed because one of the preconditions is not met.
+            The request has not been performed because one of the preconditions is not met (Will be supported in future).
           schema:
             $ref: '#/definitions/Error'
 
 
 
 ######################################################
-# The "Subscription Throttle Policy Collection" resource API
+# The "Subscription Throttling Policy Collection" resource API
 ######################################################
   '/throttling/policies/subscription':
 
@@ -349,16 +369,21 @@ paths:
 # Retrieve all Subscription level policies
 #-----------------------------------------------------
     get:
+      x-wso2-curl: "curl -k -H \"Authorization: Bearer 0d63e133-7ad6-3aeb-9ca9-9299e0708122\" https://localhost:9443/api/am/admin/v0.10/throttling/policies/subscription"
+      x-wso2-request: |
+        GET https://localhost:9443/api/am/admin/v0.10/throttling/policies/subscription
+        Authorization: Bearer 0d63e133-7ad6-3aeb-9ca9-9299e0708122
+      x-wso2-response: "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\r\n  \"count\": 5,\r\n  \"list\": [\r\n    {\r\n      \"policyId\": \"6fac9345-6e49-4a31-813b-3d520e09e38b\",\r\n      \"policyName\": \"Gold\",\r\n      \"displayName\": \"Gold\",\r\n      \"description\": \"Allows 5000 requests per minute\",\r\n      \"isDeployed\": true,\r\n      \"defaultLimit\": {\r\n        \"type\": \"RequestCountLimit\",\r\n        \"timeUnit\": \"min\",\r\n        \"unitTime\": 1,\r\n        \"requestCount\": 5000\r\n      },\r\n      \"rateLimitCount\": 0,\r\n      \"rateLimitTimeUnit\": null,\r\n      \"customAttributes\": [],\r\n      \"stopOnQuotaReach\": true,\r\n      \"billingPlan\": \"FREE\"\r\n    },\r\n    {\r\n      \"policyId\": \"851bf1b4-19da-4019-949a-9b371f53c8d6\",\r\n      \"policyName\": \"Silver\",\r\n      \"displayName\": \"Silver\",\r\n      \"description\": \"Allows 2000 requests per minute\",\r\n      \"isDeployed\": true,\r\n      \"defaultLimit\": {\r\n        \"type\": \"RequestCountLimit\",\r\n        \"timeUnit\": \"min\",\r\n        \"unitTime\": 1,\r\n        \"requestCount\": 2000\r\n      },\r\n      \"rateLimitCount\": 0,\r\n      \"rateLimitTimeUnit\": null,\r\n      \"customAttributes\": [],\r\n      \"stopOnQuotaReach\": true,\r\n      \"billingPlan\": \"FREE\"\r\n    },\r\n    {\r\n      \"policyId\": \"f0b88e6e-cb02-46d6-9c7c-6204729b39f2\",\r\n      \"policyName\": \"Bronze\",\r\n      \"displayName\": \"Bronze\",\r\n      \"description\": \"Allows 1000 requests per minute\",\r\n      \"isDeployed\": true,\r\n      \"defaultLimit\": {\r\n        \"type\": \"RequestCountLimit\",\r\n        \"timeUnit\": \"min\",\r\n        \"unitTime\": 1,\r\n        \"requestCount\": 1000\r\n      },\r\n      \"rateLimitCount\": 0,\r\n      \"rateLimitTimeUnit\": null,\r\n      \"customAttributes\": [],\r\n      \"stopOnQuotaReach\": true,\r\n      \"billingPlan\": \"FREE\"\r\n    },\r\n    {\r\n      \"policyId\": \"880bd267-4b14-4248-ac35-37c52546851f\",\r\n      \"policyName\": \"Unauthenticated\",\r\n      \"displayName\": \"Unauthenticated\",\r\n      \"description\": \"Allows 500 request(s) per minute\",\r\n      \"isDeployed\": true,\r\n      \"defaultLimit\": {\r\n        \"type\": \"RequestCountLimit\",\r\n        \"timeUnit\": \"min\",\r\n        \"unitTime\": 1,\r\n        \"requestCount\": 500\r\n      },\r\n      \"rateLimitCount\": 0,\r\n      \"rateLimitTimeUnit\": null,\r\n      \"customAttributes\": [],\r\n      \"stopOnQuotaReach\": true,\r\n      \"billingPlan\": \"FREE\"\r\n    },\r\n    {\r\n      \"policyId\": \"c61f9682-a5f5-4991-b8f9-ea0f44147a5a\",\r\n      \"policyName\": \"Unlimited\",\r\n      \"displayName\": \"Unlimited\",\r\n      \"description\": \"Allows unlimited requests\",\r\n      \"isDeployed\": true,\r\n      \"defaultLimit\": {\r\n        \"type\": \"RequestCountLimit\",\r\n        \"timeUnit\": \"min\",\r\n        \"unitTime\": 1,\r\n        \"requestCount\": 2147483647\r\n      },\r\n      \"rateLimitCount\": 0,\r\n      \"rateLimitTimeUnit\": null,\r\n      \"customAttributes\": [],\r\n      \"stopOnQuotaReach\": true,\r\n      \"billingPlan\": \"FREE\"\r\n    }\r\n  ]\r\n}"
       x-scope: apim:tier_view
-      summary: Get all Subscription level throttle policies
+      summary: Get all Subscription Throttling Policies
       description: |
-        Get all Subscription level throttle policies
+        This operation can be used to retrieve all Subscription level throttling policies.
       parameters:
         - $ref: '#/parameters/Accept'
         - $ref: '#/parameters/If-None-Match'
         - $ref: '#/parameters/If-Modified-Since'
       tags:
-        - Subscription Policies
+        - Subscription Policies (Collection)
       responses:
         200:
           description: |
@@ -374,17 +399,17 @@ paths:
             ETag:
               description: |
                 Entity Tag of the response resource.
-                Used by caches, or in conditional requests.
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
             Last-Modified:
               description: |
                 Date and time the resource has been modifed the last time.
-                Used by caches, or in conditional reuquests.
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
         304:
           description: |
             Not Modified.
-            Empty body because the client has already the latest version of the requested resource.
+            Empty body because the client has already the latest version of the requested resource (Will be supported in future).
         406:
           description: |
             Not Acceptable.
@@ -393,13 +418,16 @@ paths:
             $ref: '#/definitions/Error'
 
 #-----------------------------------------------------
-# Add a Subscription level throttle policy
+# Add a Subscription level Throttling Policy
 #-----------------------------------------------------  
     post:
+      x-wso2-curl: "curl -k -X POST -H \"Authorization: Bearer 0d63e133-7ad6-3aeb-9ca9-9299e0708122\" -H \"Content-Type: application/json\" https://localhost:9443/api/am/admin/v0.10/throttling/policies/subscription -d @data.json"
+      x-wso2-request: "POST https://localhost:9443/api/am/admin/v0.10/throttling/policies/subscription\r\nAuthorization: Bearer 0d63e133-7ad6-3aeb-9ca9-9299e0708122\r\nContent-Type: application/json\r\n\r\n{\r\n    \"policyName\": \"Platinum\",\r\n    \"displayName\": \"Platinum\",\r\n    \"description\": \"Allows 4000 requests per minute\",\r\n    \"defaultLimit\":          {\r\n       \"type\": \"RequestCountLimit\",\r\n       \"timeUnit\": \"min\",\r\n       \"unitTime\": 1,\r\n       \"requestCount\": 4000\r\n    },\r\n    \"rateLimitCount\": -1,\r\n    \"rateLimitTimeUnit\": \"NA\",\r\n    \"customAttributes\":          [\r\n                   {\r\n          \"name\": \"customAttr1\",\r\n          \"value\": \"value1\"\r\n       },\r\n                   {\r\n          \"name\": \"customAttr2\",\r\n          \"value\": \"value2\"\r\n       }\r\n    ],\r\n    \"stopOnQuotaReach\": true,\r\n    \"billingPlan\": \"COMMERCIAL\"\r\n}"
+      x-wso2-response: "HTTP/1.1 201 Created\r\nLocation: https://localhost:9443/api/am/admin/v0.10/throttling/policies/subscription/6dd9fc11-bbe1-4daf-aee5-06a4d0e44476\r\nContent-Type: application/json\r\n\r\n{\r\n  \"policyId\": \"6dd9fc11-bbe1-4daf-aee5-06a4d0e44476\",\r\n  \"policyName\": \"Platinum\",\r\n  \"displayName\": \"Platinum\",\r\n  \"description\": \"Allows 4000 requests per minute\",\r\n  \"isDeployed\": true,\r\n  \"defaultLimit\": {\r\n    \"type\": \"RequestCountLimit\",\r\n    \"timeUnit\": \"min\",\r\n    \"unitTime\": 1,\r\n    \"requestCount\": 4000\r\n  },\r\n  \"rateLimitCount\": -1,\r\n  \"rateLimitTimeUnit\": \"NA\",\r\n  \"customAttributes\": [\r\n    {\r\n      \"name\": \"customAttr1\",\r\n      \"value\": \"value1\"\r\n    },\r\n    {\r\n      \"name\": \"customAttr2\",\r\n      \"value\": \"value2\"\r\n    }\r\n  ],\r\n  \"stopOnQuotaReach\": true,\r\n  \"billingPlan\": \"COMMERCIAL\"\r\n}"
       x-scope: apim:tier_manage
-      summary: Add a Subscription level throttle policy
+      summary: Add a Subscription Throttling Policy
       description: |
-        Add a Subscription level throttle policy
+        This operation can be used to add a Subscription level throttling policy specifying the details of the policy in the payload.
       parameters:
         - in: body
           name: body
@@ -410,7 +438,7 @@ paths:
             $ref: '#/definitions/SubscriptionThrottlePolicy'
         - $ref: '#/parameters/Content-Type'
       tags:
-        - Subscription Policies
+        - Subscription Policies (Collection)
       responses:
         201:
           description: |
@@ -431,7 +459,7 @@ paths:
             ETag:
               description: |
                 Entity Tag of the response resource.
-                Used by caches, or in conditional request'
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
         400:
           description: |
@@ -445,7 +473,7 @@ paths:
             The entity of the request was in a not supported format.
 
 ######################################################
-# The "Individual Subscription Throttle Policy" resource API
+# The "Individual Subscription Throttling Policy" resource API
 ######################################################
   '/throttling/policies/subscription/{policyId}': 
   
@@ -453,16 +481,21 @@ paths:
 # Retrieve a certain Subscription Policy
 #-----------------------------------------------------
     get:
+      x-wso2-curl: "curl -k -H \"Authorization: Bearer 0d63e133-7ad6-3aeb-9ca9-9299e0708122\" https://localhost:9443/api/am/admin/v0.10/throttling/policies/subscription/6dd9fc11-bbe1-4daf-aee5-06a4d0e44476"
+      x-wso2-request: |
+        GET https://localhost:9443/api/am/admin/v0.10/throttling/policies/subscription/6dd9fc11-bbe1-4daf-aee5-06a4d0e44476
+        Authorization: Bearer 0d63e133-7ad6-3aeb-9ca9-9299e0708122
+      x-wso2-response: "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\r\n  \"policyId\": \"6dd9fc11-bbe1-4daf-aee5-06a4d0e44476\",\r\n  \"policyName\": \"Platinum\",\r\n  \"displayName\": \"Platinum\",\r\n  \"description\": \"Allows 4000 requests per minute\",\r\n  \"isDeployed\": true,\r\n  \"defaultLimit\": {\r\n    \"type\": \"RequestCountLimit\",\r\n    \"timeUnit\": \"min\",\r\n    \"unitTime\": 1,\r\n    \"requestCount\": 4000\r\n  },\r\n  \"rateLimitCount\": -1,\r\n  \"rateLimitTimeUnit\": \"NA\",\r\n  \"customAttributes\": [\r\n    {\r\n      \"name\": \"customAttr1\",\r\n      \"value\": \"value1\"\r\n    },\r\n    {\r\n      \"name\": \"customAttr2\",\r\n      \"value\": \"value2\"\r\n    }\r\n  ],\r\n  \"stopOnQuotaReach\": true,\r\n  \"billingPlan\": \"COMMERCIAL\"\r\n}"
       x-scope: apim:tier_view
-      summary: Retrieve a Subscription Policy
+      summary: Get a Subscription Policy
       description: |
-        Retrieve a Subscription Policy providing the policy name.
+        Retrieve a single subscription-level throttling policy. We should provide the Id of the policy as a path parameter.
       parameters:
         - $ref: '#/parameters/policyId'
         - $ref: '#/parameters/If-None-Match'
         - $ref: '#/parameters/If-Modified-Since'
       tags:
-        - Subscription Policies
+        - Subscription Policies (Individual)
       responses:
         200:
           description: |
@@ -478,17 +511,17 @@ paths:
             ETag:
               description: |
                 Entity Tag of the response resource.
-                Used by caches, or in conditional requests.
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
             Last-Modified:
               description: |
                 Date and time the resource has been modifed the last time.
-                Used by caches, or in conditional reuquests.
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
         304:
           description: |
             Not Modified.
-            Empty body because the client has already the latest version of the requested resource.
+            Empty body because the client has already the latest version of the requested resource (Will be supported in future).
         404:
           description: |
             Not Found.
@@ -503,19 +536,25 @@ paths:
             $ref: '#/definitions/Error'
 
 #-----------------------------------------------------
-# Delete a Subscription level throttle policy
+# Delete a Subscription level throttling policy
 #-----------------------------------------------------  
     delete:
+      x-wso2-curl: "curl -k -X DELETE -H \"Authorization: Bearer 0d63e133-7ad6-3aeb-9ca9-9299e0708122\" -H \"Content-Type: application/json\" https://localhost:9443/api/am/admin/v0.10/throttling/policies/subscription/3cc8902e-f7c7-49dc-987b-b146e9bd8ee8"
+      x-wso2-request: |
+        DELETE https://localhost:9443/api/am/admin/v0.10/throttling/policies/subscription/3cc8902e-f7c7-49dc-987b-b146e9bd8ee8
+        Authorization: Bearer 0d63e133-7ad6-3aeb-9ca9-9299e0708122
+        Content-Type: application/json
+      x-wso2-response: "HTTP/1.1 200 OK"
       x-scope: apim:tier_manage
-      summary: Delete a Subscription level throttle policy
+      summary: Delete a Subscription Policy
       description: |
-        Delete a Subscription level throttle policy
+        This operation can be used to delete a subscription-level throttling policy specifying the Id of the policy as a path paramter.
       parameters:
         - $ref: '#/parameters/policyId'
         - $ref: '#/parameters/If-Match'
         - $ref: '#/parameters/If-Unmodified-Since'
       tags:
-        - Subscription Policies
+        - Subscription Policies (Individual)
       responses:
         200:
           description: |
@@ -530,18 +569,21 @@ paths:
         412:
           description: |
             Precondition Failed.
-            The request has not been performed because one of the preconditions is not met.
+            The request has not been performed because one of the preconditions is not met (Will be supported in future).
           schema:
             $ref: '#/definitions/Error'
 
 #-----------------------------------------------------
-# Update a Subscription throttle policy
+# Update a Subscription Throttling Policy
 #-----------------------------------------------------
     put:
+      x-wso2-curl: "curl -k -X PUT -H \"Authorization: Bearer 0d63e133-7ad6-3aeb-9ca9-9299e0708122\" -H \"Content-Type: application/json\" https://localhost:9443/api/am/admin/v0.10/throttling/policies/subscription/6dd9fc11-bbe1-4daf-aee5-06a4d0e44476 -d @data.json"
+      x-wso2-request: "PUT https://localhost:9443/api/am/admin/v0.10/throttling/policies/subscription/6dd9fc11-bbe1-4daf-aee5-06a4d0e44476\r\nAuthorization: Bearer 0d63e133-7ad6-3aeb-9ca9-9299e0708122\r\nContent-Type: application/json\r\n\r\n{\r\n    \"policyName\": \"Platinum\",\r\n    \"displayName\": \"Platinum\",\r\n    \"description\": \"Allows 10000 requests per minute\",\r\n    \"defaultLimit\":          {\r\n       \"type\": \"RequestCountLimit\",\r\n       \"timeUnit\": \"min\",\r\n       \"unitTime\": 1,\r\n       \"requestCount\": 10000\r\n    },\r\n    \"isDeployed\": true,\r\n    \"rateLimitCount\": -1,\r\n    \"rateLimitTimeUnit\": \"NA\",\r\n    \"customAttributes\":          [\r\n                   {\r\n          \"name\": \"customAttr0\",\r\n          \"value\": \"value1\"\r\n       },\r\n                   {\r\n          \"name\": \"customAttr1\",\r\n          \"value\": \"value1\"\r\n       }\r\n    ],\r\n    \"stopOnQuotaReach\": true,\r\n    \"billingPlan\": \"COMMERCIAL\"\r\n}"
+      x-wso2-response: "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\r\n  \"policyId\": \"6dd9fc11-bbe1-4daf-aee5-06a4d0e44476\",\r\n  \"policyName\": \"Platinum\",\r\n  \"displayName\": \"Platinum\",\r\n  \"description\": \"Allows 10000 requests per minute\",\r\n  \"isDeployed\": true,\r\n  \"defaultLimit\": {\r\n    \"type\": \"RequestCountLimit\",\r\n    \"timeUnit\": \"min\",\r\n    \"unitTime\": 1,\r\n    \"requestCount\": 10000\r\n  },\r\n  \"rateLimitCount\": -1,\r\n  \"rateLimitTimeUnit\": \"NA\",\r\n  \"customAttributes\": [\r\n    {\r\n      \"name\": \"customAttr0\",\r\n      \"value\": \"value1\"\r\n    },\r\n    {\r\n      \"name\": \"customAttr1\",\r\n      \"value\": \"value1\"\r\n    }\r\n  ],\r\n  \"stopOnQuotaReach\": true,\r\n  \"billingPlan\": \"COMMERCIAL\"\r\n}"
       x-scope: apim:tier_manage
-      summary: Update a Subscription level throttle policy
+      summary: Update a Subscription Policy
       description: |
-        Update a Subscription level throttle policy
+        Updates an existing subscription-level throttling policy.
       parameters:
         - $ref: '#/parameters/policyId'
         - in: body
@@ -555,7 +597,7 @@ paths:
         - $ref: '#/parameters/If-Match'
         - $ref: '#/parameters/If-Unmodified-Since'
       tags:
-        - Subscription Policies
+        - Subscription Policies (Individual)
       responses:
         200:
           description: |
@@ -575,12 +617,12 @@ paths:
             ETag:
               description: |
                 Entity Tag of the response resource.
-                Used by caches, or in conditional request.
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
             Last-Modified:
               description: |
                 Date and time the resource has been modifed the last time.
-                Used by caches, or in conditional reuquests.
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
         400:
           description: |
@@ -597,7 +639,7 @@ paths:
         412:
           description: |
             Precondition Failed.
-            The request has not been performed because one of the preconditions is not met.
+            The request has not been performed because one of the preconditions is not met (Will be supported in future).
           schema:
             $ref: '#/definitions/Error'
 
@@ -610,16 +652,24 @@ paths:
 # Retrieve all Custom Rules
 #-----------------------------------------------------
     get:
+      x-wso2-curl: "curl -k -H \"Authorization: Bearer 0d63e133-7ad6-3aeb-9ca9-9299e0708122\" https://localhost:9443/api/am/admin/v0.10/throttling/policies/custom"
+      x-wso2-request: |
+        GET https://localhost:9443/api/am/admin/v0.10/throttling/policies/custom
+        Authorization: Bearer 0d63e133-7ad6-3aeb-9ca9-9299e0708122
+      x-wso2-response: "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\r\n  \"count\": 1,\r\n  \"list\": [\r\n    {\r\n      \"policyId\": \"33662a62-8db1-4d75-af08-afd63c6bd0b4\",\r\n      \"policyName\": \"custom1\",\r\n      \"displayName\": null,\r\n      \"description\": \"Allow 10 requests per minute for admin user\",\r\n      \"isDeployed\": true,\r\n      \"siddhiQuery\": \"FROM RequestStream\\nSELECT userId, ( userId == 'admin@carbon.super' ) AS isEligible , str:concat('admin@carbon.super','') as throttleKey\\nINSERT INTO EligibilityStream; \\n\\nFROM EligibilityStream[isEligible==true]#throttler:timeBatch(1 min) \\nSELECT throttleKey, (count(userId) >= 10) as isThrottled, expiryTimeStamp group by throttleKey \\nINSERT ALL EVENTS into ResultStream;\",\r\n      \"keyTemplate\": \"$userId\"\r\n    }\r\n  ]\r\n}"
       x-scope: apim:tier_view
       summary: Get all Custom Rules
       description: |
-        Get all Custom Rules
+        Retrieves all Custom Rules.
+        
+        **NOTE:**
+        * Only super tenant users are allowed for this operation.
       parameters:
         - $ref: '#/parameters/Accept'
         - $ref: '#/parameters/If-None-Match'
         - $ref: '#/parameters/If-Modified-Since'
       tags:
-        - Custom Rules
+        - Custom Rules (Collection)
       responses:
         200:
           description: |
@@ -635,17 +685,17 @@ paths:
             ETag:
               description: |
                 Entity Tag of the response resource.
-                Used by caches, or in conditional requests.
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
             Last-Modified:
               description: |
                 Date and time the resource has been modifed the last time.
-                Used by caches, or in conditional reuquests.
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
         304:
           description: |
             Not Modified.
-            Empty body because the client has already the latest version of the requested resource.
+            Empty body because the client has already the latest version of the requested resource (Will be supported in future).
         406:
           description: |
             Not Acceptable.
@@ -657,10 +707,16 @@ paths:
 # Add a Custom Rule
 #-----------------------------------------------------  
     post:
+      x-wso2-curl: "curl -k -H POST -H \"Authorization: Bearer 0d63e133-7ad6-3aeb-9ca9-9299e0708122\" -H \"Content-Type: application/json\" https://localhost:9443/api/am/admin/v0.10/throttling/policies/custom -d @data.json"
+      x-wso2-request: "POST https://localhost:9443/api/am/admin/v0.10/throttling/policies/custom\r\nAuthorization: Bearer 0d63e133-7ad6-3aeb-9ca9-9299e0708122\r\nContent-Type: application/json\r\n\r\n{\r\n  \"policyName\": \"custom1\",\r\n  \"description\": \"Allow 10 requests per minute for admin user\",\r\n  \"siddhiQuery\": \"FROM RequestStream\\nSELECT userId, ( userId == 'admin@carbon.super' ) AS isEligible , str:concat('admin@carbon.super','') as throttleKey\\nINSERT INTO EligibilityStream; \\n\\nFROM EligibilityStream[isEligible==true]#throttler:timeBatch(1 min) \\nSELECT throttleKey, (count(userId) >= 10) as isThrottled, expiryTimeStamp group by throttleKey \\nINSERT ALL EVENTS into ResultStream;\",\r\n  \"keyTemplate\": \"$userId\"\r\n}"
+      x-wso2-response: "HTTP/1.1 201 Created\r\nLocation: https://localhost:9443/api/am/admin/v0.10/throttling/policies/custom/22c71b7d-7013-4b80-bf7a-e86b471fb575\r\nContent-Type: application/json\r\n\r\n{\r\n  \"policyId\": \"22c71b7d-7013-4b80-bf7a-e86b471fb575\",\r\n  \"policyName\": \"custom1\",\r\n  \"displayName\": null,\r\n  \"description\": \"Allow 10 requests per minute for admin user\",\r\n  \"isDeployed\": true,\r\n  \"siddhiQuery\": \"FROM RequestStream\\nSELECT userId, ( userId == 'admin@carbon.super' ) AS isEligible , str:concat('admin@carbon.super','') as throttleKey\\nINSERT INTO EligibilityStream; \\n\\nFROM EligibilityStream[isEligible==true]#throttler:timeBatch(1 min) \\nSELECT throttleKey, (count(userId) >= 10) as isThrottled, expiryTimeStamp group by throttleKey \\nINSERT ALL EVENTS into ResultStream;\",\r\n  \"keyTemplate\": \"$userId\"\r\n}"
       x-scope: apim:tier_manage
       summary: Add a Custom Rule
       description: |
-        Add a Custom Rule
+        Adds a new Custom Rule.
+        
+        **NOTE:**
+        * Only super tenant users are allowed for this operation.
       parameters:
         - in: body
           name: body
@@ -671,7 +727,7 @@ paths:
             $ref: '#/definitions/CustomRule'
         - $ref: '#/parameters/Content-Type'
       tags:
-        - Custom Rules
+        - Custom Rules (Collection)
       responses:
         201:
           description: |
@@ -692,7 +748,7 @@ paths:
             ETag:
               description: |
                 Entity Tag of the response resource.
-                Used by caches, or in conditional request'
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
         400:
           description: |
@@ -714,16 +770,24 @@ paths:
 # Retrieve a certain Custom Rule
 #-----------------------------------------------------
     get:
+      x-wso2-curl: "curl -k -H \"Authorization: Bearer 0d63e133-7ad6-3aeb-9ca9-9299e0708122\" https://localhost:9443/api/am/admin/v0.10/throttling/policies/custom/33662a62-8db1-4d75-af08-afd63c6bd0b4"
+      x-wso2-request: |
+        GET https://localhost:9443/api/am/admin/v0.10/throttling/policies/custom/33662a62-8db1-4d75-af08-afd63c6bd0b4
+        Authorization: Bearer 0d63e133-7ad6-3aeb-9ca9-9299e0708122
+      x-wso2-response: "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\r\n  \"policyId\": \"33662a62-8db1-4d75-af08-afd63c6bd0b4\",\r\n  \"policyName\": \"custom1\",\r\n  \"displayName\": null,\r\n  \"description\": \"Allow 10 requests per minute for admin user\",\r\n  \"isDeployed\": true,\r\n  \"siddhiQuery\": \"FROM RequestStream\\nSELECT userId, ( userId == 'admin@carbon.super' ) AS isEligible , str:concat('admin@carbon.super','') as throttleKey\\nINSERT INTO EligibilityStream; \\n\\nFROM EligibilityStream[isEligible==true]#throttler:timeBatch(1 min) \\nSELECT throttleKey, (count(userId) >= 10) as isThrottled, expiryTimeStamp group by throttleKey \\nINSERT ALL EVENTS into ResultStream;\",\r\n  \"keyTemplate\": \"$userId\"\r\n}"
       x-scope: apim:tier_view
-      summary: Retrieve a Custom Rule
+      summary: Get a Custom Rule
       description: |
-        Retrieve a Custom Rule providing the policy name.
+        Retrieves a Custom Rule. We need to provide the policy Id as a path parameter.
+        
+        **NOTE:**
+        * Only super tenant users are allowed for this operation.
       parameters:
         - $ref: '#/parameters/ruleId'
         - $ref: '#/parameters/If-None-Match'
         - $ref: '#/parameters/If-Modified-Since'
       tags:
-        - Custom Rules
+        - Custom Rules (Individual)
       responses:
         200:
           description: |
@@ -739,17 +803,17 @@ paths:
             ETag:
               description: |
                 Entity Tag of the response resource.
-                Used by caches, or in conditional requests.
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
             Last-Modified:
               description: |
                 Date and time the resource has been modifed the last time.
-                Used by caches, or in conditional reuquests.
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
         304:
           description: |
             Not Modified.
-            Empty body because the client has already the latest version of the requested resource.
+            Empty body because the client has already the latest version of the requested resource (Will be supported in future).
         404:
           description: |
             Not Found.
@@ -767,16 +831,24 @@ paths:
 # Delete a Custom Rule
 #-----------------------------------------------------  
     delete:
+      x-wso2-curl: "curl -k -X DELETE -H \"Authorization: Bearer 0d63e133-7ad6-3aeb-9ca9-9299e0708122\" https://localhost:9443/api/am/admin/v0.10/throttling/policies/custom/33662a62-8db1-4d75-af08-afd63c6bd0b4"
+      x-wso2-request: |
+        DELETE https://localhost:9443/api/am/admin/v0.10/throttling/policies/custom/33662a62-8db1-4d75-af08-afd63c6bd0b4
+        Authorization: Bearer 0d63e133-7ad6-3aeb-9ca9-9299e0708122
+      x-wso2-response: "HTTP/1.1 200 OK"
       x-scope: apim:tier_manage
       summary: Delete a Custom Rule
       description: |
-        Delete a Custom Rule
+        Delete a Custom Rule. We need to provide the Id of the policy as a path parameter.
+        
+        **NOTE:**
+        * Only super tenant users are allowed for this operation.
       parameters:
         - $ref: '#/parameters/ruleId'
         - $ref: '#/parameters/If-Match'
         - $ref: '#/parameters/If-Unmodified-Since'
       tags:
-        - Custom Rules
+        - Custom Rules (Individual)
       responses:
         200:
           description: |
@@ -791,7 +863,7 @@ paths:
         412:
           description: |
             Precondition Failed.
-            The request has not been performed because one of the preconditions is not met.
+            The request has not been performed because one of the preconditions is not met (Will be supported in future).
           schema:
             $ref: '#/definitions/Error'
 
@@ -799,10 +871,16 @@ paths:
 # Update a Custom Rule
 #-----------------------------------------------------
     put:
+      x-wso2-curl: "curl -k -X PUT -H \"Authorization: Bearer 0d63e133-7ad6-3aeb-9ca9-9299e0708122\" -H \"Content-Type: application/json\" https://localhost:9443/api/am/admin/v0.10/throttling/policies/custom/33662a62-8db1-4d75-af08-afd63c6bd0b4 -d @data.json"
+      x-wso2-request: "PUT https://localhost:9443/api/am/admin/v0.10/throttling/policies/custom/33662a62-8db1-4d75-af08-afd63c6bd0b4\r\nAuthorization: Bearer 0d63e133-7ad6-3aeb-9ca9-9299e0708122\r\nContent-Type: application/json\r\n\r\n{\r\n  \"policyName\": \"custom1\",\r\n  \"description\": \"Allow 10 requests per minute for admin user\",\r\n  \"siddhiQuery\": \"FROM RequestStream\\nSELECT userId, ( userId == 'admin@carbon.super' ) AS isEligible , str:concat('admin@carbon.super','') as throttleKey\\nINSERT INTO EligibilityStream; \\n\\nFROM EligibilityStream[isEligible==true]#throttler:timeBatch(1 min) \\nSELECT throttleKey, (count(userId) >= 10) as isThrottled, expiryTimeStamp group by throttleKey \\nINSERT ALL EVENTS into ResultStream;\",\r\n  \"keyTemplate\": \"$userId\"\r\n}"
+      x-wso2-response: "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\r\n  \"policyId\": \"33662a62-8db1-4d75-af08-afd63c6bd0b4\",\r\n  \"policyName\": \"custom1\",\r\n  \"displayName\": null,\r\n  \"description\": \"Allow 10 requests per minute for admin user\",\r\n  \"isDeployed\": true,\r\n  \"siddhiQuery\": \"FROM RequestStream\\nSELECT userId, ( userId == 'admin@carbon.super' ) AS isEligible , str:concat('admin@carbon.super','') as throttleKey\\nINSERT INTO EligibilityStream; \\n\\nFROM EligibilityStream[isEligible==true]#throttler:timeBatch(1 min) \\nSELECT throttleKey, (count(userId) >= 10) as isThrottled, expiryTimeStamp group by throttleKey \\nINSERT ALL EVENTS into ResultStream;\",\r\n  \"keyTemplate\": \"$userId\"\r\n}"
       x-scope: apim:tier_manage
       summary: Update a Custom Rule
       description: |
-        Update a Custom Rule
+        Updates an existing Custom Rule.
+        
+        **NOTE:**
+        * Only super tenant users are allowed for this operation.
       parameters:
         - $ref: '#/parameters/ruleId'
         - in: body
@@ -816,7 +894,7 @@ paths:
         - $ref: '#/parameters/If-Match'
         - $ref: '#/parameters/If-Unmodified-Since'
       tags:
-        - Custom Rules
+        - Custom Rules (Individual)
       responses:
         200:
           description: |
@@ -836,12 +914,12 @@ paths:
             ETag:
               description: |
                 Entity Tag of the response resource.
-                Used by caches, or in conditional request.
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
             Last-Modified:
               description: |
                 Date and time the resource has been modifed the last time.
-                Used by caches, or in conditional reuquests.
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
         400:
           description: |
@@ -858,13 +936,13 @@ paths:
         412:
           description: |
             Precondition Failed.
-            The request has not been performed because one of the preconditions is not met.
+            The request has not been performed because one of the preconditions is not met (Will be supported in future).
           schema:
             $ref: '#/definitions/Error'
 
 
 ######################################################
-# The "Advanced Throttle Policy Collection" resource API
+# The "Advanced Throttling Policy Collection" resource API
 ######################################################
   '/throttling/policies/advanced':
 
@@ -872,16 +950,21 @@ paths:
 # Retrieve all Advanced level policies
 #-----------------------------------------------------
     get:
+      x-wso2-curl: "curl -k -H \"Authorization: Bearer aa5195d9-3977-33f4-839e-5779dabfe826\" https://localhost:9443/api/am/admin/v0.10/throttling/policies/advanced"
+      x-wso2-request: |
+        https://localhost:9443/api/am/admin/v0.10/throttling/policies/advanced
+        Authorization: Bearer aa5195d9-3977-33f4-839e-5779dabfe826
+      x-wso2-response: "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\r\n  \"count\": 4,\r\n  \"list\": [\r\n    {\r\n      \"policyId\": \"85c69cbe-05b7-4293-abff-56f424d51c9c\",\r\n      \"policyName\": \"50KPerMin\",\r\n      \"displayName\": \"50KPerMin\",\r\n      \"description\": \"Allows 50000 requests per minute\",\r\n      \"isDeployed\": true,\r\n      \"defaultLimit\": {\r\n        \"type\": \"RequestCountLimit\",\r\n        \"timeUnit\": \"min\",\r\n        \"unitTime\": 1,\r\n        \"requestCount\": 50000\r\n      }\r\n    },\r\n    {\r\n      \"policyId\": \"46062a74-edfa-431a-a418-7cb52595baf8\",\r\n      \"policyName\": \"20KPerMin\",\r\n      \"displayName\": \"20KPerMin\",\r\n      \"description\": \"Allows 20000 requests per minute\",\r\n      \"isDeployed\": true,\r\n      \"defaultLimit\": {\r\n        \"type\": \"RequestCountLimit\",\r\n        \"timeUnit\": \"min\",\r\n        \"unitTime\": 1,\r\n        \"requestCount\": 20000\r\n      }\r\n    },\r\n    {\r\n      \"policyId\": \"0637089f-2128-4a26-9bee-ffb6d85f0f81\",\r\n      \"policyName\": \"10KPerMin\",\r\n      \"displayName\": \"10KPerMin\",\r\n      \"description\": \"Allows 10000 requests per minute\",\r\n      \"isDeployed\": true,\r\n      \"defaultLimit\": {\r\n        \"type\": \"RequestCountLimit\",\r\n        \"timeUnit\": \"min\",\r\n        \"unitTime\": 1,\r\n        \"requestCount\": 10000\r\n      }\r\n    },\r\n    {\r\n      \"policyId\": \"c461d87e-dba1-4f57-bc5a-67b97025c1c8\",\r\n      \"policyName\": \"Unlimited\",\r\n      \"displayName\": \"Unlimited\",\r\n      \"description\": \"Allows unlimited requests\",\r\n      \"isDeployed\": true,\r\n      \"defaultLimit\": {\r\n        \"type\": \"RequestCountLimit\",\r\n        \"timeUnit\": \"min\",\r\n        \"unitTime\": 1,\r\n        \"requestCount\": 2147483647\r\n      }\r\n    }\r\n  ]\r\n}"
       x-scope: apim:tier_view
-      summary: Get all Advanced level throttle policies
+      summary: Get all Advanced throttling policies.
       description: |
-        Get all Advanced level throttle policies
+        Retrieves all existing Advanced level throttling policies.
       parameters:
         - $ref: '#/parameters/Accept'
         - $ref: '#/parameters/If-None-Match'
         - $ref: '#/parameters/If-Modified-Since'
       tags:
-        - Advanced Policies
+        - Advanced Policies (Collection)
       responses:
         200:
           description: |
@@ -897,17 +980,17 @@ paths:
             ETag:
               description: |
                 Entity Tag of the response resource.
-                Used by caches, or in conditional requests.
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
             Last-Modified:
               description: |
                 Date and time the resource has been modifed the last time.
-                Used by caches, or in conditional reuquests.
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
         304:
           description: |
             Not Modified.
-            Empty body because the client has already the latest version of the requested resource.
+            Empty body because the client has already the latest version of the requested resource (Will be supported in future).
         406:
           description: |
             Not Acceptable.
@@ -916,13 +999,16 @@ paths:
             $ref: '#/definitions/Error'
 
 #-----------------------------------------------------
-# Add an Advanced level throttle policy
+# Add an Advanced level throttling policy
 #-----------------------------------------------------  
     post:
+      x-wso2-curl: "curl -k -H POST -H \"Authorization: Bearer f7058af8-65a3-36c0-8d61-bc30476755c7\" -H \"Content-Type: application/json\" https://localhost:9443/api/am/admin/v0.10/throttling/policies/advanced -d @data.json"
+      x-wso2-request: "POST https://localhost:9443/api/am/admin/v0.10/throttling/policies/advanced\r\nAuthorization: Bearer f7058af8-65a3-36c0-8d61-bc30476755c7\r\nContent-Type: application/json\r\n\r\n{\r\n   \"policyName\": \"100KBP2Min\",\r\n   \"displayName\": \"100KBP2Min\",\r\n   \"description\": \"description of the policy\",\r\n   \"defaultLimit\":    {\r\n      \"type\": \"BandwidthLimit\",\r\n      \"timeUnit\": \"min\",\r\n      \"unitTime\": 2,\r\n      \"dataAmount\": 100,\r\n      \"dataUnit\": \"KB\"\r\n   },\r\n   \"conditionalGroups\":    [\r\n            {\r\n         \"description\": \"Sample description about condition group\",\r\n         \"conditions\":          [\r\n                        {\r\n               \"type\": \"IPCondition\",\r\n               \"invertCondition\": false,\r\n               \"ipConditionType\": \"IPSpecific\",\r\n               \"specificIP\": \"10.100.1.22\",\r\n               \"startingIP\": null,\r\n               \"endingIP\": null\r\n            },\r\n                        {\r\n               \"type\": \"HeaderCondition\",\r\n               \"invertCondition\": false,\r\n               \"headerName\": \"Location\",\r\n               \"headerValue\": \"google.com\"\r\n            },\r\n                        {\r\n               \"type\": \"HeaderCondition\",\r\n               \"invertCondition\": false,\r\n               \"headerName\": \"Host\",\r\n               \"headerValue\": \"10.100.7.77\"\r\n            },\r\n                        {\r\n               \"type\": \"QueryParameterCondition\",\r\n               \"invertCondition\": false,\r\n               \"parameterName\": \"name\",\r\n               \"parameterValue\": \"admin\"\r\n            },\r\n                        {\r\n               \"type\": \"QueryParameterCondition\",\r\n               \"invertCondition\": false,\r\n               \"parameterName\": \"lastAccess\",\r\n               \"parameterValue\": \"25-02-2016\"\r\n            },\r\n                        {\r\n               \"type\": \"JWTClaimsCondition\",\r\n               \"invertCondition\": true,\r\n               \"claimUrl\": \"claimUrl0\",\r\n               \"attribute\": \"claimAttr0\"\r\n            },\r\n                        {\r\n               \"type\": \"JWTClaimsCondition\",\r\n               \"invertCondition\": true,\r\n               \"claimUrl\": \"claimUrl1\",\r\n               \"attribute\": \"claimAttr\"\r\n            }\r\n         ],\r\n         \"limit\":          {\r\n            \"type\": \"RequestCountLimit\",\r\n            \"timeUnit\": \"sec\",\r\n            \"unitTime\": 60,\r\n            \"requestCount\": 0\r\n         }\r\n      },\r\n            {\r\n         \"description\": \"Sample description about condition group\",\r\n         \"conditions\": [         {\r\n            \"type\": \"IPCondition\",\r\n            \"invertCondition\": true,\r\n            \"ipConditionType\": \"IPRange\",\r\n            \"specificIP\": null,\r\n            \"startingIP\": \"0.0.0.0\",\r\n            \"endingIP\": \"1.1.1.1\"\r\n         }],\r\n         \"limit\":          {\r\n            \"type\": \"RequestCountLimit\",\r\n            \"timeUnit\": \"sec\",\r\n            \"unitTime\": 60,\r\n            \"requestCount\": 0\r\n         }\r\n      }\r\n   ]\r\n}"
+      x-wso2-response: "HTTP/1.1 201 Created\r\nLocation: https://localhost:9443/api/am/admin/v0.10/throttling/policies/advanced/a0c9f368-b7d2-4eec-a757-f67034160208\r\nContent-Type: application/json\r\n\r\n{\r\n  \"policyId\": \"a0c9f368-b7d2-4eec-a757-f67034160208\",\r\n  \"policyName\": \"100KBP2Min\",\r\n  \"displayName\": \"100KBP2Min\",\r\n  \"description\": \"description of the policy\",\r\n  \"isDeployed\": true,\r\n  \"defaultLimit\": {\r\n    \"type\": \"BandwidthLimit\",\r\n    \"timeUnit\": \"min\",\r\n    \"unitTime\": 2,\r\n    \"dataAmount\": 100,\r\n    \"dataUnit\": \"KB\"\r\n  },\r\n  \"conditionalGroups\": [\r\n    {\r\n      \"description\": \"Sample description about condition group\",\r\n      \"conditions\": [\r\n        {\r\n          \"type\": \"IPCondition\",\r\n          \"invertCondition\": false,\r\n          \"ipConditionType\": \"IPSpecific\",\r\n          \"specificIP\": \"10.100.1.22\",\r\n          \"startingIP\": null,\r\n          \"endingIP\": null\r\n        },\r\n        {\r\n          \"type\": \"HeaderCondition\",\r\n          \"invertCondition\": false,\r\n          \"headerName\": \"Location\",\r\n          \"headerValue\": \"google.com\"\r\n        },\r\n        {\r\n          \"type\": \"HeaderCondition\",\r\n          \"invertCondition\": false,\r\n          \"headerName\": \"Host\",\r\n          \"headerValue\": \"10.100.7.77\"\r\n        },\r\n        {\r\n          \"type\": \"QueryParameterCondition\",\r\n          \"invertCondition\": false,\r\n          \"parameterName\": \"name\",\r\n          \"parameterValue\": \"admin\"\r\n        },\r\n        {\r\n          \"type\": \"QueryParameterCondition\",\r\n          \"invertCondition\": false,\r\n          \"parameterName\": \"lastAccess\",\r\n          \"parameterValue\": \"25-02-2016\"\r\n        },\r\n        {\r\n          \"type\": \"JWTClaimsCondition\",\r\n          \"invertCondition\": true,\r\n          \"claimUrl\": \"claimUrl0\",\r\n          \"attribute\": \"claimAttr0\"\r\n        },\r\n        {\r\n          \"type\": \"JWTClaimsCondition\",\r\n          \"invertCondition\": true,\r\n          \"claimUrl\": \"claimUrl1\",\r\n          \"attribute\": \"claimAttr\"\r\n        }\r\n      ],\r\n      \"limit\": {\r\n        \"type\": \"RequestCountLimit\",\r\n        \"timeUnit\": \"sec\",\r\n        \"unitTime\": 60,\r\n        \"requestCount\": 0\r\n      }\r\n    },\r\n    {\r\n      \"description\": \"Sample description about condition group\",\r\n      \"conditions\": [\r\n        {\r\n          \"type\": \"IPCondition\",\r\n          \"invertCondition\": true,\r\n          \"ipConditionType\": \"IPRange\",\r\n          \"specificIP\": null,\r\n          \"startingIP\": \"0.0.0.0\",\r\n          \"endingIP\": \"1.1.1.1\"\r\n        }\r\n      ],\r\n      \"limit\": {\r\n        \"type\": \"RequestCountLimit\",\r\n        \"timeUnit\": \"sec\",\r\n        \"unitTime\": 60,\r\n        \"requestCount\": 0\r\n      }\r\n    }\r\n  ]\r\n}"
       x-scope: apim:tier_manage
-      summary: Add an Advanced level throttle policy
+      summary: Add an Advanced Throttling Policy
       description: |
-        Add an Advanced level throttle policy
+        Add a new Advanced level throttling policy.
       parameters:
         - in: body
           name: body
@@ -933,7 +1019,7 @@ paths:
             $ref: '#/definitions/AdvancedThrottlePolicy'
         - $ref: '#/parameters/Content-Type'
       tags:
-        - Advanced Policies
+        - Advanced Policies (Collection)
       responses:
         201:
           description: |
@@ -945,7 +1031,7 @@ paths:
           headers:
             Location:
               description: |
-                Location of the newly created Advanced Throttle policy.
+                Location of the newly created Advanced Throttling Policy.
               type: string
             Content-Type:
               description: |
@@ -954,7 +1040,7 @@ paths:
             ETag:
               description: |
                 Entity Tag of the response resource.
-                Used by caches, or in conditional request'
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
         400:
           description: |
@@ -968,7 +1054,7 @@ paths:
             The entity of the request was in a not supported format.
 
 ######################################################
-# The "Individual Advanced Throttle Policy" resource API
+# The "Individual Advanced Throttling Policy" resource API
 ######################################################
   '/throttling/policies/advanced/{policyId}': 
   
@@ -976,16 +1062,21 @@ paths:
 # Retrieve a certain Advanced Throttling Policy
 #-----------------------------------------------------
     get:
+      x-wso2-curl: "curl -k -H \"Authorization: Bearer f7058af8-65a3-36c0-8d61-bc30476755c7\" https://localhost:9443/api/am/admin/v0.10/throttling/policies/advanced/ea4ee02d-6cfb-4eea-9e30-3f548783160b"
+      x-wso2-request: |
+        GET https://localhost:9443/api/am/admin/v0.10/throttling/policies/advanced/ea4ee02d-6cfb-4eea-9e30-3f548783160b
+        Authorization: Bearer f7058af8-65a3-36c0-8d61-bc30476755c7
+      x-wso2-response: "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\r\n  \"policyId\": \"ea4ee02d-6cfb-4eea-9e30-3f548783160b\",\r\n  \"policyName\": \"50KPerMin\",\r\n  \"displayName\": \"50KPerMin\",\r\n  \"description\": \"Allows 50000 requests per minute\",\r\n  \"isDeployed\": true,\r\n  \"defaultLimit\": {\r\n    \"type\": \"RequestCountLimit\",\r\n    \"timeUnit\": \"min\",\r\n    \"unitTime\": 1,\r\n    \"requestCount\": 50000\r\n  },\r\n  \"conditionalGroups\": []\r\n}\r\n"
       x-scope: apim:tier_view
-      summary: Retrieve an Advanced Policy
+      summary: Get an Advanced Policy
       description: |
-        Retrieve a Advanced Policy providing the policy name.
+        Retrieves an Advanced Policy.
       parameters:
         - $ref: '#/parameters/policyId'
         - $ref: '#/parameters/If-None-Match'
         - $ref: '#/parameters/If-Modified-Since'
       tags:
-        - Advanced Policies
+        - Advanced Policies (Individual)
       responses:
         200:
           description: |
@@ -1001,17 +1092,17 @@ paths:
             ETag:
               description: |
                 Entity Tag of the response resource.
-                Used by caches, or in conditional requests.
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
             Last-Modified:
               description: |
                 Date and time the resource has been modifed the last time.
-                Used by caches, or in conditional reuquests.
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
         304:
           description: |
             Not Modified.
-            Empty body because the client has already the latest version of the requested resource.
+            Empty body because the client has already the latest version of the requested resource (Will be supported in future).
         404:
           description: |
             Not Found.
@@ -1026,19 +1117,24 @@ paths:
             $ref: '#/definitions/Error'
 
 #-----------------------------------------------------
-# Delete an Advanced level throttle policy
+# Delete an Advanced level throttling policy
 #-----------------------------------------------------  
     delete:
+      x-wso2-curl: "curl -k -X DELETE -H \"Authorization: Bearer f7058af8-65a3-36c0-8d61-bc30476755c7\" https://localhost:9443/api/am/admin/v0.10/throttling/policies/advanced/a0c9f368-b7d2-4eec-a757-f67034160208"
+      x-wso2-request: |
+        DELETE https://localhost:9443/api/am/admin/v0.10/throttling/policies/advanced/a0c9f368-b7d2-4eec-a757-f67034160208
+        Authorization: Bearer f7058af8-65a3-36c0-8d61-bc30476755c7
+      x-wso2-response: "HTTP/1.1 200 OK"
       x-scope: apim:tier_manage
-      summary: Delete an Advanced level throttle policy
+      summary: Delete an Advanced Throttling Policy
       description: |
-        Delete an Advanced level throttle policy
+        Deletes an Advanced level throttling policy.
       parameters:
         - $ref: '#/parameters/policyId'
         - $ref: '#/parameters/If-Match'
         - $ref: '#/parameters/If-Unmodified-Since'
       tags:
-        - Advanced Policies
+        - Advanced Policies (Individual)
       responses:
         200:
           description: |
@@ -1053,18 +1149,21 @@ paths:
         412:
           description: |
             Precondition Failed.
-            The request has not been performed because one of the preconditions is not met.
+            The request has not been performed because one of the preconditions is not met (Will be supported in future).
           schema:
             $ref: '#/definitions/Error'
 
 #-----------------------------------------------------
-# Update an Advanced throttle policy
+# Update an Advanced Throttling Policy
 #-----------------------------------------------------
     put:
+      x-wso2-curl: "curl -k -X PUT -H \"Authorization: Bearer f7058af8-65a3-36c0-8d61-bc30476755c7\" -H \"Content-Type: application/json\" https://localhost:9443/api/am/admin/v0.10/throttling/policies/advanced/a0c9f368-b7d2-4eec-a757-f67034160208 -d @data.json"
+      x-wso2-request: "PUT https://localhost:9443/api/am/admin/v0.10/throttling/policies/advanced/a0c9f368-b7d2-4eec-a757-f67034160208\r\nAuthorization: Bearer f7058af8-65a3-36c0-8d61-bc30476755c7\r\nContent-Type: application/json\r\n\r\n{\r\n   \"policyName\": \"100KBP2Min\",\r\n   \"displayName\": \"100KBP2Min\",\r\n   \"description\": \"description of the policy\",\r\n   \"defaultLimit\":    {\r\n      \"type\": \"BandwidthLimit\",\r\n      \"timeUnit\": \"min\",\r\n      \"unitTime\": 2,\r\n      \"dataAmount\": 100,\r\n      \"dataUnit\": \"KB\"\r\n   },\r\n   \"conditionalGroups\":    [\r\n      {\r\n         \"description\": \"Sample description about condition group\",\r\n         \"conditions\":          [\r\n                        {\r\n               \"type\": \"IPCondition\",\r\n               \"invertCondition\": false,\r\n               \"ipConditionType\": \"IPSpecific\",\r\n               \"specificIP\": \"10.100.1.22\",\r\n               \"startingIP\": null,\r\n               \"endingIP\": null\r\n            },\r\n                        {\r\n               \"type\": \"HeaderCondition\",\r\n               \"invertCondition\": false,\r\n               \"headerName\": \"Host\",\r\n               \"headerValue\": \"10.100.7.77\"\r\n            },\r\n                        {\r\n               \"type\": \"QueryParameterCondition\",\r\n               \"invertCondition\": false,\r\n               \"parameterName\": \"name\",\r\n               \"parameterValue\": \"admin\"\r\n            },\r\n                        {\r\n               \"type\": \"JWTClaimsCondition\",\r\n               \"invertCondition\": true,\r\n               \"claimUrl\": \"claimUrl0\",\r\n               \"attribute\": \"claimAttr0\"\r\n            }\r\n         ],\r\n         \"limit\":          {\r\n            \"type\": \"RequestCountLimit\",\r\n            \"timeUnit\": \"sec\",\r\n            \"unitTime\": 60,\r\n            \"requestCount\": 0\r\n         }\r\n      }\r\n   ]\r\n}"
+      x-wso2-response: "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\r\n  \"policyId\": \"a0c9f368-b7d2-4eec-a757-f67034160208\",\r\n  \"policyName\": \"100KBP2Min\",\r\n  \"displayName\": \"100KBP2Min\",\r\n  \"description\": \"description of the policy\",\r\n  \"isDeployed\": true,\r\n  \"defaultLimit\": {\r\n    \"type\": \"BandwidthLimit\",\r\n    \"timeUnit\": \"min\",\r\n    \"unitTime\": 2,\r\n    \"dataAmount\": 100,\r\n    \"dataUnit\": \"KB\"\r\n  },\r\n  \"conditionalGroups\": [\r\n    {\r\n      \"description\": \"Sample description about condition group\",\r\n      \"conditions\": [\r\n        {\r\n          \"type\": \"IPCondition\",\r\n          \"invertCondition\": false,\r\n          \"ipConditionType\": \"IPSpecific\",\r\n          \"specificIP\": \"10.100.1.22\",\r\n          \"startingIP\": null,\r\n          \"endingIP\": null\r\n        },\r\n        {\r\n          \"type\": \"HeaderCondition\",\r\n          \"invertCondition\": false,\r\n          \"headerName\": \"Host\",\r\n          \"headerValue\": \"10.100.7.77\"\r\n        },\r\n        {\r\n          \"type\": \"QueryParameterCondition\",\r\n          \"invertCondition\": false,\r\n          \"parameterName\": \"name\",\r\n          \"parameterValue\": \"admin\"\r\n        },\r\n        {\r\n          \"type\": \"JWTClaimsCondition\",\r\n          \"invertCondition\": true,\r\n          \"claimUrl\": \"claimUrl0\",\r\n          \"attribute\": \"claimAttr0\"\r\n        }\r\n      ],\r\n      \"limit\": {\r\n        \"type\": \"RequestCountLimit\",\r\n        \"timeUnit\": \"sec\",\r\n        \"unitTime\": 60,\r\n        \"requestCount\": 0\r\n      }\r\n    }\r\n  ]\r\n}"
       x-scope: apim:tier_manage
-      summary: Update an Advanced level throttle policy
+      summary: Update an Advanced Throttling Policy
       description: |
-        Update an Advanced level throttle policy
+        Updates an existing Advanced level throttling policy.
       parameters:
         - $ref: '#/parameters/policyId'
         - in: body
@@ -1078,7 +1177,7 @@ paths:
         - $ref: '#/parameters/If-Match'
         - $ref: '#/parameters/If-Unmodified-Since'
       tags:
-        - Advanced Policies
+        - Advanced Policies (Individual)
       responses:
         200:
           description: |
@@ -1098,12 +1197,12 @@ paths:
             ETag:
               description: |
                 Entity Tag of the response resource.
-                Used by caches, or in conditional request.
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
             Last-Modified:
               description: |
                 Date and time the resource has been modifed the last time.
-                Used by caches, or in conditional reuquests.
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
         400:
           description: |
@@ -1120,7 +1219,7 @@ paths:
         412:
           description: |
             Precondition Failed.
-            The request has not been performed because one of the preconditions is not met.
+            The request has not been performed because one of the preconditions is not met (Will be supported in future).
           schema:
             $ref: '#/definitions/Error'
 
@@ -1133,16 +1232,21 @@ paths:
 # Retrieve all Blocking conditions
 #-----------------------------------------------------
     get:
+      x-wso2-curl: "curl -k -H \"Authorization: Bearer a1e3951b-a15c-3d79-a15b-99f1d612843e\" https://localhost:9443/api/am/admin/v0.10/throttling/blacklist"
+      x-wso2-request: |
+        GET https://localhost:9443/api/am/admin/v0.10/throttling/blacklist
+        Authorization: Bearer a1e3951b-a15c-3d79-a15b-99f1d612843e
+      x-wso2-response: "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\r\n  \"count\": 3,\r\n  \"list\": [\r\n    {\r\n      \"conditionId\": \"0b65b686-841b-48eb-b4c2-427d24584d71\",\r\n      \"conditionType\": \"IP\",\r\n      \"conditionValue\": \"127.0.0.332\"\r\n    },\r\n    {\r\n      \"conditionId\": \"3baa990c-f90b-4e3e-9db7-f29ee7f46f48\",\r\n      \"conditionType\": \"IP\",\r\n      \"conditionValue\": \"127.0.0.1\"\r\n    },\r\n    {\r\n      \"conditionId\": \"b513eb68-69e8-4c32-92cf-852c101363cf\",\r\n      \"conditionType\": \"IP\",\r\n      \"conditionValue\": \"10.100.7.77\"\r\n    }\r\n  ]\r\n}"
       x-scope: apim:bl_view
       summary: Get all blocking condtions
       description: |
-        Get all blocking condtions
+        Retrieves all existing blocking condtions.
       parameters:
         - $ref: '#/parameters/Accept'
         - $ref: '#/parameters/If-None-Match'
         - $ref: '#/parameters/If-Modified-Since'
       tags:
-        - Blacklist
+        - Blacklist (Collection)
       responses:
         200:
           description: |
@@ -1158,17 +1262,17 @@ paths:
             ETag:
               description: |
                 Entity Tag of the response resource.
-                Used by caches, or in conditional requests.
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
             Last-Modified:
               description: |
                 Date and time the resource has been modifed the last time.
-                Used by caches, or in conditional reuquests.
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
         304:
           description: |
             Not Modified.
-            Empty body because the client has already the latest version of the requested resource.
+            Empty body because the client has already the latest version of the requested resource (Will be supported in future).
         406:
           description: |
             Not Acceptable.
@@ -1180,10 +1284,13 @@ paths:
 # Add a Custom Rule
 #-----------------------------------------------------  
     post:
+      x-wso2-curl: "curl -k -X POST -H \"Authorization: Bearer a1e3951b-a15c-3d79-a15b-99f1d612843e\" -H \"Content-Type: application/json\" https://localhost:9443/api/am/admin/v0.10/throttling/blacklist"
+      x-wso2-request: "POST https://localhost:9443/api/am/admin/v0.10/throttling/blacklist\r\nAuthorization: Bearer a1e3951b-a15c-3d79-a15b-99f1d612843e\r\nContent-Type: application/json\r\n\r\n{\r\n \"conditionType\": \"IP\",\r\n\t\"conditionValue\": \"10.100.7.77\"\r\n}\r\n"
+      x-wso2-response: "HTTP/1.1 201 Created\r\nLocation: https://localhost:9443/api/am/admin/v0.10/throttling/blacklist/b513eb68-69e8-4c32-92cf-852c101363cf\r\nContent-Type: application/json\r\n\r\n{\r\n  \"conditionId\": \"b513eb68-69e8-4c32-92cf-852c101363cf\",\r\n  \"conditionType\": \"IP\",\r\n  \"conditionValue\": \"10.100.7.77\"\r\n}"
       x-scope: apim:bl_manage
       summary: Add a Blocking condition
       description: |
-        Add a Blocking condition
+        Adds a new Blocking condition.
       parameters:
         - in: body
           name: body
@@ -1194,7 +1301,7 @@ paths:
             $ref: '#/definitions/BlockingCondition'
         - $ref: '#/parameters/Content-Type'
       tags:
-        - Blacklist
+        - Blacklist (Collection)
       responses:
         201:
           description: |
@@ -1215,7 +1322,7 @@ paths:
             ETag:
               description: |
                 Entity Tag of the response resource.
-                Used by caches, or in conditional request'
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
         400:
           description: |
@@ -1237,16 +1344,21 @@ paths:
 # Retrieve a Blocking condition
 #-----------------------------------------------------
     get:
+      x-wso2-curl: "curl -k -H \"Authorization: Bearer a1e3951b-a15c-3d79-a15b-99f1d612843e\" https://localhost:9443/api/am/admin/v0.10/throttling/blacklist/b513eb68-69e8-4c32-92cf-852c101363c"
+      x-wso2-request: |
+        https://localhost:9443/api/am/admin/v0.10/throttling/blacklist/b513eb68-69e8-4c32-92cf-852c101363c
+        Authorization: Bearer a1e3951b-a15c-3d79-a15b-99f1d612843e
+      x-wso2-response: "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\r\n  \"conditionId\": \"b513eb68-69e8-4c32-92cf-852c101363cf\",\r\n  \"conditionType\": \"IP\",\r\n  \"conditionValue\": \"10.100.7.77\"\r\n}"
       x-scope: apim:bl_view
-      summary: Retrieve a Blocking Condition
+      summary: Get a Blocking Condition
       description: |
-        Retrieve a Blocking Condition providing the condition Id
+        Retrieves a Blocking Condition providing the condition Id
       parameters:
         - $ref: '#/parameters/conditionId'
         - $ref: '#/parameters/If-None-Match'
         - $ref: '#/parameters/If-Modified-Since'
       tags:
-        - Blacklist
+        - Blacklist (Individual)
       responses:
         200:
           description: |
@@ -1262,17 +1374,17 @@ paths:
             ETag:
               description: |
                 Entity Tag of the response resource.
-                Used by caches, or in conditional requests.
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
             Last-Modified:
               description: |
                 Date and time the resource has been modifed the last time.
-                Used by caches, or in conditional reuquests.
+                Used by caches, or in conditional requests (Will be supported in future).
               type: string
         304:
           description: |
             Not Modified.
-            Empty body because the client has already the latest version of the requested resource.
+            Empty body because the client has already the latest version of the requested resource (Will be supported in future).
         404:
           description: |
             Not Found.
@@ -1290,16 +1402,21 @@ paths:
 # Delete a Blocking condition
 #-----------------------------------------------------  
     delete:
+      x-wso2-curl: "curl -k -X DELETE -H \"Authorization: Bearer a1e3951b-a15c-3d79-a15b-99f1d612843e\" -H \"Content-Type: application/json\" https://localhost:9443/api/am/admin/v0.10/throttling/blacklist/b513eb68-69e8-4c32-92cf-852c101363cf"
+      x-wso2-request: |
+        DELETE https://localhost:9443/api/am/admin/v0.10/throttling/blacklist/b513eb68-69e8-4c32-92cf-852c101363cf
+        Authorization: Bearer a1e3951b-a15c-3d79-a15b-99f1d612843e
+      x-wso2-response: "HTTP/1.1 200 OK"
       x-scope: apim:bl_manage
       summary: Delete a Blocking condition
       description: |
-        Delete a Blocking condition
+        Deletes an existing Blocking condition
       parameters:
         - $ref: '#/parameters/conditionId'
         - $ref: '#/parameters/If-Match'
         - $ref: '#/parameters/If-Unmodified-Since'
       tags:
-        - Blacklist
+        - Blacklist (Individual)
       responses:
         200:
           description: |
@@ -1314,7 +1431,7 @@ paths:
         412:
           description: |
             Precondition Failed.
-            The request has not been performed because one of the preconditions is not met.
+            The request has not been performed because one of the preconditions is not met (Will be supported in future).
           schema:
             $ref: '#/definitions/Error'
 
@@ -1323,7 +1440,7 @@ paths:
 ######################################################
 parameters:
 
-# Throttle Policy Id
+# Throttling Policy Id
 # Specified as part of the path expression
   policyId:
     name: policyId
@@ -1358,8 +1475,8 @@ parameters:
     name: Accept
     in: header
     description: |
-      Media types acceptable for the response. Default is JSON.
-    default: JSON
+      Media types acceptable for the response. Default is application/json.
+    default: application/json
     type: string
 
 # The HTTP Content-Type header
@@ -1367,8 +1484,8 @@ parameters:
     name: Content-Type
     in: header
     description: |
-      Media type of the entity in the body. Default is JSON.
-    default: JSON
+      Media type of the entity in the body. Default is application/json.
+    default: application/json
     required: true
     type : string
 
@@ -1379,7 +1496,7 @@ parameters:
     in: header
     description: |
       Validator for conditional requests; based on the ETag of the formerly retrieved
-      variant of the resourec.
+      variant of the resource.
     type : string
 
 # The HTTP If-Modified-Since header
@@ -1427,6 +1544,7 @@ definitions:
       code:
         type: integer
         format: int64
+        description: Error code
       message:
         type: string
         description: Error message.
@@ -1457,33 +1575,41 @@ definitions:
     properties:
       code:
         type: string
+        description: Error code
       message:
         type: string
         description: |
           Description about individual errors occurred
 
 #-----------------------------------------------------
-# The Throttle Policy resource
+# The Throttling Policy resource
 #-----------------------------------------------------
   ThrottlePolicy :
-    title: Generic Throttle Policy
+    title: Generic Throttling Policy
     required:
       - policyName
     properties:
       policyId:
         type: string
+        description: Id of policy
+        example: 0c6439fd-9b16-3c2e-be6e-1086e0b9aa93
       policyName:
         type: string
+        description: Name of policy
+        example: Policy1
       displayName:
         type: string
+        description: Display name of the policy
       description:
         type: string
+        description: Description of the policy
       isDeployed:
         type: boolean
         default: false
+        description: Indicates whether the policy is deployed successfully or not.
   
 #-----------------------------------------------------
-# The Advanced Throttle Policy Info resource
+# The Advanced Throttling Policy Info resource
 #-----------------------------------------------------
   AdvancedThrottlePolicyInfo : 
     title: Advanced Throttling Policy
@@ -1496,7 +1622,7 @@ definitions:
             $ref: '#/definitions/ThrottleLimit'
 
 #-----------------------------------------------------
-# The Advanced Throttle Policy resource
+# The Advanced Throttling Policy resource
 #-----------------------------------------------------
   AdvancedThrottlePolicy : 
     title: Advanced Throttling Policy
@@ -1513,15 +1639,15 @@ definitions:
               $ref: '#/definitions/ConditionalGroup'
 
 #-----------------------------------------------------
-# The Advanced Throttle Policy List resource
+# The Advanced Throttling Policy List resource
 #-----------------------------------------------------
   AdvancedThrottlePolicyList:
-    title: Advanced Throttle Policy List
+    title: Advanced Throttling Policy List
     properties:
       count:
         type: integer
         description: |
-          Number of Advanced throttle policies returned.
+          Number of Advanced Throttling Policies returned.
         example: 1
       list:
         type: array
@@ -1529,10 +1655,10 @@ definitions:
           $ref: '#/definitions/AdvancedThrottlePolicyInfo'
 
 #-----------------------------------------------------
-# The Application Throttle Policy resource
+# The Application Throttling Policy resource
 #-----------------------------------------------------
   ApplicationThrottlePolicy:
-    title: Application Throttle Policy
+    title: Application Throttling Policy
     required:
       - defaultLimit
     allOf:
@@ -1542,15 +1668,15 @@ definitions:
             $ref: '#/definitions/ThrottleLimit'
 
 #-----------------------------------------------------
-# The Advanced Throttle Policy List resource
+# The Advanced Throttling Policy List resource
 #-----------------------------------------------------
   ApplicationThrottlePolicyList:
-    title: Application Level Throttle Policy List
+    title: Application Level Throttling Policy List
     properties:
       count:
         type: integer
         description: |
-          Number of Application throttle policies returned.
+          Number of Application Throttling Policies returned.
         example: 1
       list:
         type: array
@@ -1558,10 +1684,10 @@ definitions:
           $ref: '#/definitions/ApplicationThrottlePolicy'
 
 #-----------------------------------------------------
-# The Subscription Throttle Policy resource
+# The Subscription Throttling Policy resource
 #-----------------------------------------------------
   SubscriptionThrottlePolicy:
-    title: Subscription Throttle Policy
+    title: Subscription Throttling Policy
     required:
       - defaultLimit
     allOf:
@@ -1572,11 +1698,14 @@ definitions:
           rateLimitCount:
             type: integer
             default: 0
+            description: Burst control request count
+            example: 10
           rateLimitTimeUnit:
             type: string
+            description: Burst control time unit
           customAttributes:
             description: |
-              Custom attributes added to the Subscription Throttle policy
+              Custom attributes added to the Subscription Throttling Policy
             type: array
             items:
               $ref: '#/definitions/CustomAttribute'
@@ -1586,19 +1715,23 @@ definitions:
           stopOnQuotaReach:
             type: boolean
             default: false
+            description: |
+             This indicates the action to be taken when a user goes beyond the allocated quota. If checked, the user's requests will be dropped. If unchecked, the requests will be allowed to pass through.
           billingPlan:
             type: string
+            description: |
+              define whether this is Paid or a Free plan. Allowed values are FREE or COMMERCIAL.
 
 #-----------------------------------------------------
-# The Subscription Throttle Policy List resource
+# The Subscription Throttling Policy List resource
 #-----------------------------------------------------
   SubscriptionThrottlePolicyList:
-    title: Subscription Level Throttle Policy List
+    title: Subscription Level Throttling Policy List
     properties:
       count:
         type: integer
         description: |
-          Number of Subscription throttle policies returned.
+          Number of Subscription Throttling Policies returned.
         example: 1
       list:
         type: array
@@ -1618,8 +1751,13 @@ definitions:
       - properties:
           siddhiQuery:
             type: string
+            description: Siddhi query which represents the custom throttling policy 
+            example: |
+              FROM RequestStream\nSELECT userId, ( userId == 'admin@carbon.super' ) AS isEligible , str:concat('admin@carbon.super','') as throttleKey\nINSERT INTO EligibilityStream; \n\nFROM EligibilityStream[isEligible==true]#throttler:timeBatch(1 min) \nSELECT throttleKey, (count(userId) >= 10) as isThrottled, expiryTimeStamp group by throttleKey \nINSERT ALL EVENTS into ResultStream;
           keyTemplate:
             type: string
+            description: The specific combination of attributes that are checked in the policy.
+            example: $userId
 
 #-----------------------------------------------------
 # The Custom Rule List resource
@@ -1648,15 +1786,36 @@ definitions:
     properties:
       description:
         type: string
+        description: Description of the Conditional Group
       conditions:
         type: array
         items:
           $ref: '#/definitions/ThrottleCondition'
+        description: |
+          Individual throttling conditions. They can be defined as either HeaderCondition, IPCondition, JWTClaimsCondition, QueryParameterCondition
+          Please see schemas of each of those throttling condition in Definitions section.
+        example: |
+          [
+            {
+               "type": "IPCondition",
+               "invertCondition": false,
+               "ipConditionType": "IPSpecific",
+               "specificIP": "10.100.1.22",
+               "startingIP": null,
+               "endingIP": null
+            },
+                        {
+               "type": "HeaderCondition",
+               "invertCondition": false,
+               "headerName": "Location",
+               "headerValue": "google.com"
+            }
+          ]
       limit:
         $ref: '#/definitions/ThrottleLimit'
 
 #-----------------------------------------------------
-# The Throttle Condition resource
+# The Throttling Condition resource
 #-----------------------------------------------------
   ThrottleCondition:
     discriminator: type
@@ -1677,15 +1836,19 @@ definitions:
           - IPCondition
           - JWTClaimsCondition
           - QueryParameterCondition
+        description: |
+          Type of the thottling condition.
+          Allowed values are HeaderCondition, IPCondition, JWTClaimsCondition, QueryParameterCondition
       invertCondition:
         type: boolean
         default: false
+        description: Specifies whether inversion of the condition to be matched against the request
 
 #-----------------------------------------------------
-# The Throttle HTTP Header Condition resource
+# The Throttling HTTP Header Condition resource
 #-----------------------------------------------------
   HeaderCondition:
-    title: HTTP Header based throttle condition
+    title: HTTP Headerc based throttling condition
     required:
       - headerName
       - headerValue
@@ -1694,14 +1857,16 @@ definitions:
       - properties:
           headerName:
             type: string
+            description: Name of the header
           headerValue:
             type: string
+            description: Value of the header
 
 #-----------------------------------------------------
-# The Throttle IP Condition resource
+# The Throttling IP Condition resource
 #-----------------------------------------------------
   IPCondition:
-    title: IP based throttle condition
+    title: IP based throttling condition
     required:
       - specificIP
     allOf:
@@ -1712,18 +1877,22 @@ definitions:
             enum:
               - IPRange
               - IPSpecific
+            description: Type of the IP condition. Allowed values are "IPRange" and "IPSpecific"
           specificIP:
             type: string
+            description: Specific IP when "IPSpecific" is used as the ipConditionType
           startingIP:
             type: string
+            description: Staring IP when "IPRange" is used as the ipConditionType
           endingIP:
             type: string
+            description: Ending IP when "IPRange" is used as the ipConditionType
 
 #-----------------------------------------------------
-# The Throttle JWT Claims Condition resource
+# The JWT Claims Condition resource
 #-----------------------------------------------------
   JWTClaimsCondition:
-    title:  JWT claim attibute based throttle condition
+    title:  JWT claim attibute based throttling condition
     required:
       - claimUrl
       - attribute
@@ -1732,14 +1901,16 @@ definitions:
       - properties:
           claimUrl: 
             type: string
+            description: JWT claim URL
           attribute: 
             type: string
+            description: Attribute to be matched
 
 #-----------------------------------------------------
-# The Throttle Query Parameter Condition resource
+# The Query Parameter Condition resource
 #-----------------------------------------------------
   QueryParameterCondition:
-    title: Query parameter based throttle condition
+    title: Query parameter based throttling condition
     required:
       - parameterName
       - parameterValue
@@ -1748,11 +1919,13 @@ definitions:
       - properties:
           parameterName:
             type: string
+            description: Name of the query parameter
           parameterValue:
             type: string
+            description: Value of the query parameter to be matched
 
 #-----------------------------------------------------
-# The Throttle Limit resource
+# The Throttling Limit resource
 #-----------------------------------------------------
   ThrottleLimit :
     discriminator: type
@@ -1769,14 +1942,22 @@ definitions:
         enum:
           - RequestCountLimit
           - BandwidthLimit
+        description: |
+          Type of the throttling limit. Allowed values are "RequestCountLimit" and "BandwidthLimit".
+          Please see schemas of each of those throttling limit types in Definitions section.
+        example: RequestCountLimit
       timeUnit:
         type: string
+        description: Unit of the time. Allowed values are "sec", "min", "hour", "day"
+        example: min
       unitTime:
         type: integer
         default: 0
+        description: Time limit that the throttling limit applies.
+        example: 10
   
 #-----------------------------------------------------
-# The Throttle Bandwidth Limit resource
+# The Throttling Bandwidth Limit resource
 #-----------------------------------------------------
   BandwidthLimit :
     required:
@@ -1788,12 +1969,15 @@ definitions:
           dataAmount:
             type: integer
             format: int64
-            default: 0
+            description: Amount of data allowed to be transfered
+            example: 1000
           dataUnit:
             type: string
+            description: Unit of data allowed to be transfered. Allowed values are "KB", "MB" and "GB"
+            example: KB
 
 #-----------------------------------------------------
-# The Throttle Request Count Limit resource
+# The Throttling Request Count Limit resource
 #-----------------------------------------------------
   RequestCountLimit :
     required:
@@ -1804,10 +1988,11 @@ definitions:
           requestCount:
             type: integer
             format: int64
-            default: 0
+            example: 1000
+            description: Maximum number of requests allowed 
 
 #-----------------------------------------------------
-# The Throttle Blocking Condition resource
+# The Throttling Blocking Condition resource
 #-----------------------------------------------------
   BlockingCondition:
     title: Blocking Conditions
@@ -1818,13 +2003,19 @@ definitions:
     properties:
       conditionId:
         type: string
+        description: Id of the blocking condition
+        example: b513eb68-69e8-4c32-92cf-852c101363cf
       conditionType:
         type: string
+        description: Type of the blocking condition
+        example: IP
       conditionValue:
         type: string
+        description: Value of the blocking condition
+        example: 192.168.7.77
 
 #-----------------------------------------------------
-# The Throttle Blocking Condition List resource
+# The Throttling Blocking Condition List resource
 #-----------------------------------------------------
   BlockingConditionList:
     title: Blocking Conditions List
@@ -1850,8 +2041,12 @@ definitions:
     properties:
       name:
         type: string
+        description: Name of the custom attribute
+        example: customAttr1
       value:
         type: string
+        description: Value of the custom attribute
+        example: value1
 #-----------------------------------------------------
 # END-OF-FILE
 #-----------------------------------------------------
