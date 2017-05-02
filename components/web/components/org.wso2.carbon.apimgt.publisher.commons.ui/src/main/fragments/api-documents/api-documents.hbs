@@ -6,7 +6,7 @@
             <input type="hidden" id="docAPIName" value="test"/>
             <input type="hidden" id="docId" value="test"/>
             <div id="doc-header">
-                <a id="add-new-doc" href="#" title="{{i18n "Add New Document"}}" onclick="javascript:$('#add-doc-submit').show();$('#update-doc-submit').hide();" class="btn btn-primary add-new-doc btn-sm padding-reduce-on-grid-view">
+                <a id="add-new-doc" href="#" title="{{i18n "Add New Document"}}" onclick="javascript:$('#add-doc-submit').show();$('#update-doc-submit').hide();" data-resource-path="/apis/{apiId}/documents" data-resource-method="post" class="btn btn-primary add-new-doc btn-sm padding-reduce-on-grid-view">
                     <i class=" glyphicon glyphicon-plus-sign" title="{{i18n "Add New Document"}}"></i>
                     {{i18n "Add New Document"}}
                 </a>

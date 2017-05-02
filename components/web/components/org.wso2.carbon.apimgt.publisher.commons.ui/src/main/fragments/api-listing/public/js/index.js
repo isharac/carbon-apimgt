@@ -4,6 +4,7 @@ $(function () {
     var api = new API();
     api.getAll(getAPIsCallback);
     $(document).on('click', ".api-listing-delete", {api_instance: api}, deleteAPIHandler); // Event-type, Selector, data, method
+    validateActionButtons();
 });
 
 /**

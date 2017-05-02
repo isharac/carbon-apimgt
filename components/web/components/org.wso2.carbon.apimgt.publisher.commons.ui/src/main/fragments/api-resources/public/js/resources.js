@@ -407,6 +407,7 @@ APIDesigner.prototype.load_api_document = function(api_document){
                 });
             }).catch(apiGetErrorHandler);
     });
+    validateActionButtons('#add_resource', '#save_resources');
 };
 
 

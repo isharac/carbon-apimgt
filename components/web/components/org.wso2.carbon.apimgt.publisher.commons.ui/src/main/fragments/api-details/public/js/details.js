@@ -181,6 +181,7 @@ function lifecycleTabHandler(event) {
                     animateElement.setAttribute("repeatCount", "indefinite");
                     state_rectangle.appendChild(animateElement);
                 }, false);
+                validateActionButtons('#update-tiers-button', '#update-labels-button');
 
             }, onFailure: function (data) {
             }
@@ -256,6 +257,7 @@ function endpointsTabHandler(event) {
                     }
                     var callbacks = {
                         onSuccess: function (data) {
+                            validateActionButtons('#update-endpoints-configuration');
                         }, onFailure: function (data) {
                         }
                     };
@@ -702,6 +704,7 @@ function documentTabHandler(event) {
     var callbacks = {
             onSuccess: function (data) {
             api_client.getDocuments(api_id,getDocsCallback);
+            validateActionButtons('#add-new-doc');
             }, onFailure: function (data) {
            }
           };
