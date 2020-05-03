@@ -101,7 +101,7 @@ function TryOutController(props) {
         productionAccessToken, sandboxAccessToken, selectedKeyType, setKeys, setSelectedKeyType,
         setSelectedEnvironment, setProductionAccessToken, setSandboxAccessToken, scopes,
         setSecurityScheme, setUsername, setPassword, username, password,
-        setProductionApiKey, setSandboxApiKey, productionApiKey, sandboxApiKey,
+        setProductionApiKey, setSandboxApiKey, productionApiKey, sandboxApiKey, environmentObject, setURLs,
     } = props;
     const classes = styles();
 
@@ -304,6 +304,10 @@ function TryOutController(props) {
         switch (name) {
             case 'selectedEnvironment':
                 setSelectedEnvironment(value, true);
+                if (environmentObject) {
+                    const urls = environmentObject.find((elm) => value === elm.environmentName).URLs;
+                    setURLs(urls);
+                }
                 break;
             case 'selectedApplication':
                 setProductionAccessToken('');
@@ -327,6 +331,17 @@ function TryOutController(props) {
                 break;
             case 'password':
                 setPassword(value);
+                break;
+            case 'accessToken':
+                if (securitySchemeType === 'API-KEY' && selectedKeyType === 'PRODUCTION') {
+                    setProductionApiKey(value);
+                } else if (securitySchemeType === 'API-KEY' && selectedKeyType === 'SANDBOX') {
+                    setSandboxApiKey(value);
+                } else if (selectedKeyType === 'PRODUCTION') {
+                    setProductionAccessToken(value);
+                } else {
+                    setSandboxAccessToken(value);
+                }
                 break;
             default:
         }
@@ -499,7 +514,7 @@ function TryOutController(props) {
                                                 name='accessToken'
                                                 onChange={handleChanges}
                                                 type={showToken ? 'text' : 'password'}
-                                                value={tokenValue}
+                                                value={tokenValue || ''}
                                                 helperText={(
                                                     <FormattedMessage
                                                         id='enter.access.token'
