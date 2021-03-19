@@ -217,11 +217,6 @@ public class APIMappingUtil {
 
         dto.setWsdlUri(model.getWsdlUrl());
 
-
-        if (model.getGatewayLabels() != null) {
-            dto.setLabels(getLabelDetails(model.getGatewayLabels(), model.getContext()));
-        }
-
         if (model.getEnvironmentList() != null) {
             List<String> environmentListToReturn = new ArrayList<>();
             environmentListToReturn.addAll(model.getEnvironmentList());
@@ -400,11 +395,6 @@ public class APIMappingUtil {
             dto.setAdditionalProperties(additionalPropertiesMap);
         }
 
-
-        if (model.getGatewayLabels() != null) {
-            dto.setLabels(getLabelDetails(model.getGatewayLabels(), model.getContext()));
-        }
-
         if (model.getEnvironments() != null) {
             List<String> environmentListToReturn = new ArrayList<>(model.getEnvironments());
             dto.setEnvironmentList(environmentListToReturn);
@@ -488,6 +478,7 @@ public class APIMappingUtil {
 
         APIEndpointURLsDTO apiEndpointURLsDTO = new APIEndpointURLsDTO();
         apiEndpointURLsDTO.setEnvironmentName(environment.getName());
+        apiEndpointURLsDTO.setEnvironmentDisplayName(environment.getDisplayName());
         apiEndpointURLsDTO.setEnvironmentType(environment.getType());
 
         APIURLsDTO apiurLsDTO = new APIURLsDTO();
@@ -907,27 +898,6 @@ public class APIMappingUtil {
             }
         }
         return apiDeployedIngressURLs;
-    }
-
-    /**
-     * Returns label details of the API in REST API DTO format.
-     *
-     * @param gatewayLabels Gateway label details from the API model object
-     * @param apiContext    API context
-     * @return label details of the API in REST API DTO format
-     */
-    private static List<LabelDTO> getLabelDetails(List<Label> gatewayLabels, String apiContext) {
-        List<LabelDTO> labels = new ArrayList<>();
-        for (Label label : gatewayLabels) {
-            LabelDTO labelDTO = new LabelDTO();
-            labelDTO.setName(label.getName());
-            labelDTO.setDescription(label.getDescription());
-            for (String url : label.getAccessUrls()) {
-                labelDTO.getAccessUrls().add(url + apiContext);
-            }
-            labels.add(labelDTO);
-        }
-        return labels;
     }
 
     //    /**
