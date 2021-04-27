@@ -29,6 +29,16 @@ const CONSTS = {
         DESCRIPTION: 'description',
         OVERVIEW: '_overview',
     },
+    DEFAULT_VHOST: {
+        host: '',
+        httpContext: '',
+        httpPort: 80,
+        httpsPort: 443,
+        wsPort: 9099,
+        wssPort: 8099,
+        websubHttpPort: 9021,
+        websubHttpsPort: 8021,
+    },
 };
 
 export default CONSTS;

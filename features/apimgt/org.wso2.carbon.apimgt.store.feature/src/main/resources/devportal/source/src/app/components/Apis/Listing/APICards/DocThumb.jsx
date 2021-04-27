@@ -19,23 +19,15 @@
 import React from 'react';
 import Typography from '@material-ui/core/Typography';
 import { withStyles } from '@material-ui/core/styles';
-import Chip from '@material-ui/core/Chip';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import { FormattedMessage } from 'react-intl';
 import MaterialIcons from 'MaterialIcons';
-import CONSTS from 'AppData/Constants';
 import ImageGenerator from './ImageGenerator';
-import Api from '../../../../data/api';
 import { ApiContext } from '../../Details/ApiContext';
 
-/**
- *
- *
- * @param {*} theme
- */
-const styles = theme => ({
+const styles = (theme) => ({
     thumbContent: {
         width: theme.custom.thumbnail.width - theme.spacing(1),
         backgroundColor: theme.palette.background.paper,
@@ -48,6 +40,8 @@ const styles = theme => ({
     },
     thumbRight: {
         alignSelf: 'flex-end',
+        display: 'flex',
+        flexDirection: 'column',
     },
     thumbInfo: {
         display: 'flex',
@@ -61,7 +55,7 @@ const styles = theme => ({
         margin: 0,
     },
     contextBox: {
-        width: parseInt((theme.custom.thumbnail.width - theme.spacing(1)) / 2),
+        width: parseInt((theme.custom.thumbnail.width - theme.spacing(1)) / 2, 10),
         whiteSpace: 'nowrap',
         overflow: 'hidden',
         textOverflow: 'ellipsis',
@@ -72,8 +66,8 @@ const styles = theme => ({
     },
     thumbWrapper: {
         position: 'relative',
-        paddingTop: 20,
-        marginRight: theme.spacing(2),
+        paddingTop: 15,
+        marginLeft: theme.spacing(2),
     },
     deleteIcon: {
         fill: 'red',
@@ -96,24 +90,23 @@ const styles = theme => ({
         backgroundColor: theme.custom.thumbnail.contentBackgroundColor,
     },
 });
+
+const windowURL = window.URL || window.webkitURL;
 /**
  *
  *
  * @class DocThumb
  * @extends {React.Component}
  */
-const windowURL = window.URL || window.webkitURL;
-
 class DocThumb extends React.Component {
+    /**
+     * Creates an instance of DocThumb.
+     * @param {JSON} props properties
+     * @memberof DocThumb
+     */
     constructor(props) {
         super(props);
         this.state = {
-            active: true,
-            loading: false,
-            open: false,
-            overview_link: '',
-            isRedirect: false,
-            openMoreMenu: false,
             category: MaterialIcons.categories[0].name,
             selectedIcon: null,
             color: null,
@@ -126,15 +119,14 @@ class DocThumb extends React.Component {
      * Clean up resource
      */
     componentWillUnmount() {
-        if (this.state.thumbnail) {
-            windowURL.revokeObjectURL(this.state.imageObj);
+        const { thumbnail, imageObj } = this.state;
+        if (thumbnail) {
+            windowURL.revokeObjectURL(imageObj);
         }
     }
 
     /**
-     *
-     *
-     * @returns
+     * @returns {JSX} doc thumbnail
      * @memberof DocThumb
      */
     render() {
@@ -142,10 +134,12 @@ class DocThumb extends React.Component {
             selectedIcon, color, backgroundIndex, category,
         } = this.state;
         const { doc, classes, theme } = this.props;
-        const { doc: {
- name, sourceType, apiName, apiVersion, id, apiUUID 
-} } = this.props;
-        const details_link = '/apis/' + apiUUID + '/documents/' + id + '/details';
+        const {
+            doc: {
+                name, sourceType, apiName, apiVersion, id, apiUUID,
+            },
+        } = this.props;
+        const detailsLink = '/apis/' + apiUUID + '/documents/' + id + '/details';
         const { thumbnail } = theme.custom;
         const imageWidth = thumbnail.width;
         const defaultImage = thumbnail.defaultApiImage;
@@ -167,9 +161,9 @@ class DocThumb extends React.Component {
 
         return (
             <div className={classes.thumbWrapper}>
-                <Link to={details_link} className={classes.imageWrapper}>
+                <Link to={detailsLink} className={classes.imageWrapper}>
                     {!defaultImage && ImageView}
-                    {defaultImage && <img src={defaultImage} />}
+                    {defaultImage && <img src={defaultImage} alt='document' />}
                 </Link>
 
                 <div
@@ -177,7 +171,7 @@ class DocThumb extends React.Component {
                         [classes.imageOverlap]: thumbnail.contentPictureOverlap,
                     })}
                 >
-                    <Link to={details_link} className={classes.textWrapper}>
+                    <Link to={detailsLink} className={classes.textWrapper}>
                         <Typography
                             className={classes.thumbHeader}
                             variant='h4'
@@ -203,7 +197,7 @@ class DocThumb extends React.Component {
                             <Typography variant='subtitle1' align='right' className={classes.contextBox}>
                                 {apiVersion}
                             </Typography>
-                            <Typography variant='caption' gutterBottom align='right'>
+                            <Typography variant='caption' gutterBottom align='right' component='div'>
                                 <FormattedMessage defaultMessage='API Version' id='Apis.Listing.DocThumb.apiVersion' />
                             </Typography>
                         </div>

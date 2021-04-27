@@ -75,6 +75,7 @@ public interface APIMapper {
     @Mapping(source = "id", target = "uuid")
     @Mapping(source = "thumbnail", target = "thumbnailUrl")
     @Mapping(source = "context", target = "contextTemplate")
+    @Mapping(source = "updatedTime", target = "lastUpdated")
     API toApi(PublisherAPIInfo api);
 
     @Mapping(source = "providerName", target = "id.providerName")
@@ -84,6 +85,7 @@ public interface APIMapper {
     @Mapping(source = "thumbnail", target = "thumbnailUrl")
     @Mapping(source = "context", target = "contextTemplate")
     @Mapping(source = "availableTierNames", target = "availableTiers")
+    @Mapping(source = "subscriptionAvailableOrgs", target = "subscriptionAvailableTenants")
     API toApi(DevPortalAPIInfo api);
     
     @Mapping(source = "providerName", target = "id.providerName")

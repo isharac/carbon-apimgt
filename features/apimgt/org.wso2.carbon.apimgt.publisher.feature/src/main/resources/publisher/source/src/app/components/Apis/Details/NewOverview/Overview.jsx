@@ -148,7 +148,7 @@ function Overview(props) {
         switch (apiType) {
             case 'GRAPHQL':
                 return <Operations parentClasses={classes} api={api} />;
-            case 'APIProduct':
+            case 'APIPRODUCT':
                 return <ProductResources parentClasses={classes} api={api} />;
             case 'WS':
             case 'WEBSUB':

@@ -33,6 +33,7 @@ import java.io.EOFException;
 import java.util.List;
 
 import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 
@@ -95,7 +96,9 @@ public class GlobalThrowableMapper implements ExceptionMapper<Throwable> {
         if (e instanceof InternalServerErrorException) {
             String errorMessage = "The server encountered an internal error : " + e.getMessage();
             log.error(errorMessage, e);
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).header("Content-Type", "application/json")
+            return Response
+                    .status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .type(MediaType.APPLICATION_JSON_TYPE)
                     .entity(e500).build();
         }
 
@@ -130,6 +133,7 @@ public class GlobalThrowableMapper implements ExceptionMapper<Throwable> {
             errorDetail.setDescription(e.getMessage());
             return Response
                     .status(Response.Status.UNAUTHORIZED)
+                    .type(MediaType.APPLICATION_JSON_TYPE)
                     .entity(errorDetail)
                     .build();
         }
@@ -169,7 +173,8 @@ public class GlobalThrowableMapper implements ExceptionMapper<Throwable> {
                     log.error("A defined exception has been captured and mapped to an HTTP response " +
                             "by the global exception mapper ", e);
                 } else {
-                    log.error(e);
+                    // Not to log the stack trace due to error code was mark as not print stacktrace.
+                    log.error(e.getMessage());
                     if (log.isDebugEnabled()) {
                         log.debug("A defined exception has been captured and mapped to an HTTP response " +
                                 "by the global exception mapper ", e);
@@ -179,6 +184,7 @@ public class GlobalThrowableMapper implements ExceptionMapper<Throwable> {
                 ErrorDTO errorDTO = RestApiUtil.getErrorDTO(selectedErrorHandler);
                 return Response
                         .status(Response.Status.fromStatusCode(selectedErrorHandler.getHttpStatusCode()))
+                        .type(MediaType.APPLICATION_JSON_TYPE)
                         .entity(errorDTO)
                         .build();
             }
@@ -186,7 +192,9 @@ public class GlobalThrowableMapper implements ExceptionMapper<Throwable> {
 
         //unknown exception log and return
         log.error("An unknown exception has been captured by the global exception mapper.", e);
-        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).header("Content-Type", "application/json")
-                .entity(e500).build();
+        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .type(MediaType.APPLICATION_JSON_TYPE)
+                .entity(e500)
+                .build();
     }
 }

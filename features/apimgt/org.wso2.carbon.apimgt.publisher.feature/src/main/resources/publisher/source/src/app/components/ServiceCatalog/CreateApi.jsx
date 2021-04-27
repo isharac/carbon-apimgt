@@ -26,11 +26,17 @@ import DialogActions from '@material-ui/core/DialogActions';
 import MenuItem from '@material-ui/core/MenuItem';
 import Grid from '@material-ui/core/Grid';
 import Dialog from '@material-ui/core/Dialog';
+import AddCircleIcon from '@material-ui/icons/AddCircle';
+import IconButton from '@material-ui/core/IconButton';
+import Tooltip from '@material-ui/core/Tooltip';
 import TextField from '@material-ui/core/TextField';
+import { useHistory } from 'react-router-dom';
 import APIValidation from 'AppData/APIValidation';
 import Alert from 'AppComponents/Shared/Alert';
 import Banner from 'AppComponents/Shared/Banner';
 import { FormattedMessage, useIntl } from 'react-intl';
+import CircularProgress from '@material-ui/core/CircularProgress';
+
 import API from 'AppData/api';
 
 const useStyles = makeStyles((theme) => ({
@@ -115,6 +121,21 @@ function reducer(state, { field, value }) {
     }
 }
 
+const protocols = [
+    {
+        displayName: 'WebSocket',
+        value: 'WS',
+    },
+    {
+        displayName: 'WebSub',
+        value: 'WEBSUB',
+    },
+    {
+        displayName: 'SSE',
+        value: 'SSE',
+    },
+];
+
 /**
  * Create API Component for the Service Catalog
  * @param {any} props prop values
@@ -122,34 +143,23 @@ function reducer(state, { field, value }) {
  */
 function CreateApi(props) {
     const {
-        history,
+        isIconButton,
         isOverview,
         serviceDisplayName,
         serviceKey,
         definitionType,
         serviceVersion,
         serviceUrl,
+        usage,
     } = props;
     const classes = useStyles();
     const intl = useIntl();
+    const history = useHistory();
     const [open, setOpen] = useState(false);
     const [pageError, setPageError] = useState(null);
     const [type, setType] = useState('');
-    const protocols = [
-        {
-            displayName: 'WebSocket',
-            value: 'WS',
-        },
-        {
-            displayName: 'WebSub',
-            value: 'WEBSUB',
-        },
-        {
-            displayName: 'SSE',
-            value: 'SSE',
-        },
-    ];
     const [isFormValid, setIsFormValid] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
 
     /**
      * This method gets the context for the API from the service url
@@ -161,23 +171,27 @@ function CreateApi(props) {
         if (url && url !== '') {
             const urlObject = url.split('://').length > 1 ? new URL(url) : null;
             if (urlObject) {
-                return urlObject.pathname;
+                let path = urlObject.pathname;
+                if (path.endsWith('/')) {
+                    path = path.slice(0, -1); // Remove leading `/` because of context validation failure
+                }
+                return path;
+            } else {
+                return url.replace(/[^a-zA-Z ]/g, ''); // we need to remove the special chars from context.
             }
         }
         return url;
     }
 
     const initialState = {
-        name: serviceDisplayName ? serviceDisplayName.replace(/[&/\\#,+()$~%.'":*?<>{}\s]/g, '') : serviceDisplayName,
-        context: getContextFromServiceUrl(serviceUrl),
+        name: serviceDisplayName
+            ? serviceDisplayName.replace(/[&/\\#,+()$~%.'":*?<>{}\s]/g, '') + (usage === 0 ? '' : usage + 1)
+            : serviceDisplayName + (usage === 0 ? '' : usage + 1),
+        context: getContextFromServiceUrl(serviceUrl) + (usage === 0 ? '' : usage + 1),
         version: serviceVersion,
     };
-
     const [state, dispatch] = useReducer(reducer, initialState);
 
-    const toggleOpen = () => {
-        setOpen(!open);
-    };
     const handleClose = () => {
         setOpen(false);
     };
@@ -284,8 +298,30 @@ function CreateApi(props) {
         }
     }
 
-    const runAction = () => {
-        const promisedCreateApi = API.createApiFromService(serviceKey, state, type);
+    const toggleOpen = (event) => {
+        validate('context', context);
+        event.preventDefault();
+        event.stopPropagation();
+        setOpen(!open);
+    };
+
+    const runAction = async () => {
+        setIsProcessing(true);
+        const response = await API.policies('subscription');
+        const allPolicies = response.body.list;
+        let policies;
+        if (allPolicies.length === 0) {
+            Alert.info(intl.formatMessage({
+                id: 'Apis.Create.Default.APICreateDefault.error.policies.not.available',
+                defaultMessage: 'Throttling policies not available. Contact your administrator',
+            }));
+            throw new Error('Throttling policies not available. Contact your administrator');
+        } else if (allPolicies.filter((p) => p.name === 'Unlimited').length > 0) {
+            policies = ['Unlimited'];
+        } else {
+            policies = [allPolicies[0].name];
+        }
+        const promisedCreateApi = API.createApiFromService(serviceKey, { ...state, policies }, type);
         promisedCreateApi.then((data) => {
             const apiInfo = data;
             Alert.info(intl.formatMessage({
@@ -303,28 +339,52 @@ function CreateApi(props) {
                     defaultMessage: 'Error while creating API from service',
                     id: 'ServiceCatalog.CreateApi.error.create.api',
                 }));
-                setPageError('ServiceCatalog.CreateApi.error.create.api');
+                setPageError('Error while creating API from service');
             }
             console.error(error);
-        });
+        }).finally(() => setIsProcessing(false));
     };
 
     return (
         <>
-            <Button
-                color='primary'
-                variant={isOverview ? 'contained' : 'outlined'}
-                className={isOverview ? classes.topMarginSpacing : classes.buttonStyle}
-                onClick={toggleOpen}
-            >
-                <Typography className={!isOverview && classes.textStyle}>
-                    <FormattedMessage
-                        id='ServiceCatalog.CreateApi.create.api'
-                        defaultMessage='Create API'
-                    />
-                </Typography>
-            </Button>
+            {isIconButton && (
+                <Tooltip
+                    interactive
+                    title={(
+                        <FormattedMessage
+                            id='ServiceCatalog.Listing.components.ServiceCard.create.api'
+                            defaultMessage='Create API'
+                        />
+                    )}
+                >
+                    <IconButton
+                        disableRipple
+                        disableFocusRipple
+                        color='primary'
+                        onClick={toggleOpen}
+                        aria-label={`Create api from ${serviceDisplayName} service`}
+                    >
+                        <AddCircleIcon />
+                    </IconButton>
+                </Tooltip>
+            )}
+            {!isIconButton && (
+                <Button
+                    color='primary'
+                    variant={isOverview ? 'contained' : 'outlined'}
+                    className={isOverview ? classes.topMarginSpacing : classes.buttonStyle}
+                    onClick={toggleOpen}
+                >
+                    <Typography className={!isOverview && classes.textStyle}>
+                        <FormattedMessage
+                            id='ServiceCatalog.CreateApi.create.api'
+                            defaultMessage='Create API'
+                        />
+                    </Typography>
+                </Button>
+            )}
             <Dialog
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
                 open={open}
                 onClose={handleClose}
                 maxWidth='sm'
@@ -530,7 +590,7 @@ function CreateApi(props) {
                         className={classes.actionButtonStyle}
                     >
                         <Grid item>
-                            <Button onClick={toggleOpen} color='primary'>
+                            <Button disabled={isProcessing} onClick={toggleOpen} color='primary'>
                                 <FormattedMessage
                                     id='ServiceCatalog.CreateApi.cancel.btn'
                                     defaultMessage='Cancel'
@@ -540,12 +600,20 @@ function CreateApi(props) {
                                 onClick={runAction}
                                 color='primary'
                                 variant='contained'
-                                disabled={!isFormValid}
+                                disabled={!isFormValid || isProcessing}
                             >
-                                <FormattedMessage
-                                    id='ServiceCatalog.CreateApi.update.btn'
-                                    defaultMessage='Create API'
-                                />
+                                {isProcessing ? (
+                                    <FormattedMessage
+                                        id='ServiceCatalog.CreateApi.update.btn.in.progress'
+                                        defaultMessage='Creating API ...'
+                                    />
+                                ) : (
+                                    <FormattedMessage
+                                        id='ServiceCatalog.CreateApi.update.btn'
+                                        defaultMessage='Create API'
+                                    />
+                                )}
+                                {isProcessing && <CircularProgress size={15} />}
                             </Button>
                         </Grid>
                     </Grid>

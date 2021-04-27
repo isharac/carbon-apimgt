@@ -30,17 +30,18 @@ import { FormattedMessage } from 'react-intl';
 import MaterialIcons from 'MaterialIcons';
 import StarRatingBar from 'AppComponents/Apis/Listing/StarRatingBar';
 import { app } from 'Settings';
+import classNames from 'classnames';
 import ImageGenerator from './ImageGenerator';
 import Api from '../../../../data/api';
 import { ApiContext } from '../../Details/ApiContext';
-import classNames from 'classnames';
+import LetterGenerator from './LetterGenerator';
 
 /**
  *
  *
  * @param {*} theme
  */
-const styles = theme => ({
+const styles = (theme) => ({
     card: {
         margin: theme.spacing(3 / 2),
         maxWidth: theme.custom.thumbnail.width,
@@ -48,7 +49,6 @@ const styles = theme => ({
         position: 'relative',
     },
     apiDetails: {
-        padding: theme.spacing(1),
         background: theme.custom.thumbnail.contentBackgroundColor,
         padding: theme.spacing(1),
         color: theme.palette.getContrastText(theme.custom.thumbnail.contentBackgroundColor),
@@ -161,6 +161,12 @@ const styles = theme => ({
         'padding-left': '10px',
         'padding-right': '10px',
     },
+    actionArea: {
+        display: 'block !important',
+        '&:focus': {
+            border: '1px solid' + theme.palette.primary.main,
+        },
+    },
 });
 
 const windowURL = window.URL || window.webkitURL;
@@ -179,6 +185,7 @@ class ApiThumbClassic extends React.Component {
      */
     constructor(props) {
         super(props);
+        const { theme: { custom: { thumbnail: { defaultApiImage } } } } = props;
         this.state = {
             category: MaterialIcons.categories[0].name,
             selectedIcon: null,
@@ -186,7 +193,7 @@ class ApiThumbClassic extends React.Component {
             backgroundIndex: null,
             imageObj: null,
             isHover: false,
-            imageLoaded: false,
+            imageLoaded: !!defaultApiImage, // Convert the image string to boolean value.
         };
         this.toggleMouseOver = this.toggleMouseOver.bind(this);
     }
@@ -197,11 +204,12 @@ class ApiThumbClassic extends React.Component {
      * @memberof ApiThumb
      */
     componentDidMount() {
+        const { imageLoaded } = this.state;
+        if (imageLoaded) return;
         const { api } = this.props;
         const restApi = new Api();
 
         const promisedThumbnail = restApi.getAPIThumbnail(api.id);
-
         promisedThumbnail.then((response) => {
             if (response && response.data) {
                 if (response.headers['content-type'] === 'application/json') {
@@ -218,8 +226,8 @@ class ApiThumbClassic extends React.Component {
                 }
             }
         }).finally(() => {
-            this.setState({ imageLoaded: true })
-        })
+            this.setState({ imageLoaded: true });
+        });
     }
 
     /**
@@ -268,14 +276,14 @@ class ApiThumbClassic extends React.Component {
         const {
             api, classes, theme, customWidth, customHeight, showInfo,
         } = this.props;
-        const { custom: { thumbnail, social: { showRating } } } = theme;
+        const { custom: { thumbnail, social: { showRating }, thumbnailTemplates: { variant, active } } } = theme;
         const { name, version, context } = api;
 
         let { provider } = api;
         if (
-            api.businessInformation &&
-            api.businessInformation.businessOwner &&
-            api.businessInformation.businessOwner.trim() !== ''
+            api.businessInformation
+            && api.businessInformation.businessOwner
+            && api.businessInformation.businessOwner.trim() !== ''
         ) {
             provider = api.businessInformation.businessOwner;
         }
@@ -288,10 +296,12 @@ class ApiThumbClassic extends React.Component {
 
         let ImageView;
         if (!imageLoaded) {
-            ImageView = (<div class="image-load-frame">
-                <div class="image-load-animation1"></div>
-                <div class="image-load-animation2"></div>
-            </div>)
+            ImageView = (
+                <div className='image-load-frame'>
+                    <div className='image-load-animation1' />
+                    <div className='image-load-animation2' />
+                </div>
+            );
         } else if (imageObj) {
             ImageView = (
                 <img
@@ -303,7 +313,13 @@ class ApiThumbClassic extends React.Component {
                 />
             );
         } else {
-            ImageView = (
+            ImageView = (variant === 'text' && active) ? (
+                <LetterGenerator
+                    width={imageWidth}
+                    height={imageHeight}
+                    artifact={api}
+                />
+            ) : (
                 <ImageGenerator
                     width={imageWidth}
                     height={imageHeight}
@@ -318,6 +334,14 @@ class ApiThumbClassic extends React.Component {
                 />
             );
         }
+        if (!showInfo) {
+            return (
+                <>
+                    {!defaultImage && ImageView}
+                    {defaultImage && <img src={app.context + defaultImage} alt='img' />}
+                </>
+            );
+        }
         return (
             <Card
                 onMouseOver={this.toggleMouseOver}
@@ -330,25 +354,22 @@ class ApiThumbClassic extends React.Component {
                 {isMonetizationEnabled && (
                     <div className={classes.textblock}>{api.monetizationLabel}</div>
                 )}
-                <CardMedia>
-                    <Link to={detailsLink} aria-hidden='true' className={classes.suppressLinkStyles}>
+                <Link className={classes.actionArea} to={detailsLink} area-label={'Go to ' + name}>
+                    <CardMedia area-hidden='true'>
                         {!defaultImage && ImageView}
                         {defaultImage && <img src={app.context + defaultImage} alt='img' />}
-                    </Link>
-                </CardMedia>
-                {showInfo && (
+                    </CardMedia>
                     <CardContent classes={{ root: classes.apiDetails }}>
-                        <Link to={detailsLink} className={classes.textWrapper}>
-                            <Typography
-                                className={classes.thumbHeader}
-                                variant='h5'
-                                gutterBottom
-                                onClick={this.handleRedirectToAPIOverview}
-                                title={name}
-                            >
-                                {name}
-                            </Typography>
-                        </Link>
+                        <Typography
+                            className={classes.thumbHeader}
+                            variant='h5'
+                            component='h2'
+                            gutterBottom
+                            onClick={this.handleRedirectToAPIOverview}
+                            title={name}
+                        >
+                            {name}
+                        </Typography>
                         <div className={classes.row}>
                             <Typography variant='caption' gutterBottom align='left' className={classes.thumbBy}>
                                 <FormattedMessage defaultMessage='By' id='Apis.Listing.ApiThumb.by' />
@@ -388,26 +409,29 @@ class ApiThumbClassic extends React.Component {
                             </div>
                         </div>
                         <div className={classes.thumbInfo}>
-                            {showRating && <div className={classes.thumbLeftAction}>
-                                <Typography
-                                    variant='subtitle1'
-                                    component='div'
-                                    aria-label='API Rating'
-                                    gutterBottom
-                                    align='left'
-                                    className={classNames('api-thumb-rating', classes.ratingWrapper)}
-                                >
-                                    <StarRatingBar
-                                        apiRating={api.avgRating}
-                                        apiId={api.id}
-                                        isEditable={false}
-                                        showSummary={false}
-                                    />
-                                </Typography>
-                            </div>}
+                            {showRating && (
+                                <div className={classes.thumbLeftAction}>
+                                    <Typography
+                                        variant='subtitle1'
+                                        component='div'
+                                        aria-label='API Rating'
+                                        gutterBottom
+                                        align='left'
+                                        className={classNames('api-thumb-rating', classes.ratingWrapper)}
+                                    >
+                                        <StarRatingBar
+                                            apiRating={api.avgRating}
+                                            apiId={api.id}
+                                            isEditable={false}
+                                            showSummary={false}
+                                        />
+                                    </Typography>
+                                </div>
+                            )}
                             <div className={classes.thumbRight}>
                                 <Typography
                                     variant='subtitle1'
+                                    component='div'
                                     gutterBottom
                                     align='right'
                                     className={classes.chipWrapper}
@@ -420,15 +444,15 @@ class ApiThumbClassic extends React.Component {
                                     )}
                                     {(api.lifeCycleStatus === 'PROTOTYPED') && (
                                         <Chip
-                                        label={api.apiType === 'APIProduct' ? api.state : api.lifeCycleStatus}
-                                        color='default'
-                                    />
+                                            label={api.apiType === 'APIProduct' ? api.state : api.lifeCycleStatus}
+                                            color='default'
+                                        />
                                     )}
                                 </Typography>
                             </div>
                         </div>
                     </CardContent>
-                )}
+                </Link>
             </Card>
         );
     }

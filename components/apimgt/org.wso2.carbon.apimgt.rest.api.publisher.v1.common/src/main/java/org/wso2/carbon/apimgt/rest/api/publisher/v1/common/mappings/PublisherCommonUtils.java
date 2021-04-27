@@ -29,6 +29,7 @@ import graphql.schema.idl.UnExecutableSchemaGenerator;
 import graphql.schema.idl.errors.SchemaProblem;
 import graphql.schema.validation.SchemaValidationError;
 import graphql.schema.validation.SchemaValidator;
+import org.apache.axiom.om.OMElement;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -49,6 +50,10 @@ import org.wso2.carbon.apimgt.api.model.APIProduct;
 import org.wso2.carbon.apimgt.api.model.APIProductIdentifier;
 import org.wso2.carbon.apimgt.api.model.APIProductResource;
 import org.wso2.carbon.apimgt.api.model.Documentation;
+import org.wso2.carbon.apimgt.api.model.DocumentationContent;
+import org.wso2.carbon.apimgt.api.model.Mediation;
+import org.wso2.carbon.apimgt.api.model.ResourceFile;
+import org.wso2.carbon.apimgt.api.model.SOAPToRestSequence;
 import org.wso2.carbon.apimgt.api.model.ServiceEntry;
 import org.wso2.carbon.apimgt.api.model.SwaggerData;
 import org.wso2.carbon.apimgt.api.model.Tier;
@@ -56,15 +61,16 @@ import org.wso2.carbon.apimgt.api.model.URITemplate;
 import org.wso2.carbon.apimgt.api.model.policy.APIPolicy;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.definitions.AsyncApiParser;
-import org.wso2.carbon.apimgt.impl.definitions.AsyncApiParserUtil;
 import org.wso2.carbon.apimgt.impl.definitions.GraphQLSchemaDefinition;
 import org.wso2.carbon.apimgt.impl.definitions.OAS2Parser;
 import org.wso2.carbon.apimgt.impl.definitions.OAS3Parser;
 import org.wso2.carbon.apimgt.impl.definitions.OASParserUtil;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
+import org.wso2.carbon.apimgt.impl.wsdl.SequenceGenerator;
 import org.wso2.carbon.apimgt.rest.api.common.RestApiCommonUtil;
 import org.wso2.carbon.apimgt.rest.api.common.RestApiConstants;
 import org.wso2.carbon.apimgt.rest.api.common.annotations.Scope;
+import org.wso2.carbon.apimgt.rest.api.publisher.v1.dto.APIAdditionalPropertiesDTO;
 import org.wso2.carbon.apimgt.rest.api.publisher.v1.dto.APIDTO;
 import org.wso2.carbon.apimgt.rest.api.publisher.v1.dto.APIOperationsDTO;
 import org.wso2.carbon.apimgt.rest.api.publisher.v1.dto.APIProductDTO;
@@ -76,7 +82,9 @@ import org.wso2.carbon.context.CarbonContext;
 import org.wso2.carbon.core.util.CryptoException;
 import org.wso2.carbon.core.util.CryptoUtil;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -86,6 +94,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.xml.namespace.QName;
 
 /**
  * This is a publisher rest api utility class.
@@ -167,20 +176,25 @@ public class PublisherCommonUtils {
         CryptoUtil cryptoUtil = CryptoUtil.getDefaultCryptoUtil();
 
         // OAuth 2.0 backend protection: Api Key and Api Secret encryption while updating the API
+        String customParametersString = "{}";
         if (endpointConfig != null) {
             if ((endpointConfig.get(APIConstants.ENDPOINT_SECURITY) != null)) {
-                LinkedHashMap endpointSecurity = (LinkedHashMap) endpointConfig.get(APIConstants.ENDPOINT_SECURITY);
+                Map endpointSecurity = (Map) endpointConfig.get(APIConstants.ENDPOINT_SECURITY);
                 if (endpointSecurity.get(APIConstants.OAuthConstants.ENDPOINT_SECURITY_PRODUCTION) != null) {
-                    LinkedHashMap endpointSecurityProduction = (LinkedHashMap) endpointSecurity
+                    Map endpointSecurityProduction = (Map) endpointSecurity
                             .get(APIConstants.OAuthConstants.ENDPOINT_SECURITY_PRODUCTION);
                     String productionEndpointType = (String) endpointSecurityProduction
                             .get(APIConstants.OAuthConstants.ENDPOINT_SECURITY_TYPE);
 
                     // Change default value of customParameters JSONObject to String
-                    LinkedHashMap<String, String> customParametersHashMap =
-                            (LinkedHashMap<String, String>) endpointSecurityProduction
-                                    .get(APIConstants.OAuthConstants.OAUTH_CUSTOM_PARAMETERS);
-                    String customParametersString = JSONObject.toJSONString(customParametersHashMap);
+                    if (!(endpointSecurityProduction
+                            .get(APIConstants.OAuthConstants.OAUTH_CUSTOM_PARAMETERS) instanceof String)) {
+                        LinkedHashMap<String, String> customParametersHashMap =
+                                (LinkedHashMap<String, String>) endpointSecurityProduction
+                                        .get(APIConstants.OAuthConstants.OAUTH_CUSTOM_PARAMETERS);
+                        customParametersString = JSONObject.toJSONString(customParametersHashMap);
+                    }
+
                     endpointSecurityProduction
                             .put(APIConstants.OAuthConstants.OAUTH_CUSTOM_PARAMETERS, customParametersString);
 
@@ -188,7 +202,7 @@ public class PublisherCommonUtils {
                         String apiSecret = endpointSecurityProduction
                                 .get(APIConstants.OAuthConstants.OAUTH_CLIENT_SECRET).toString();
 
-                        if (!apiSecret.equals("")) {
+                        if (StringUtils.isNotEmpty(apiSecret)) {
                             String encryptedApiSecret = cryptoUtil.encryptAndBase64Encode(apiSecret.getBytes());
                             endpointSecurityProduction
                                     .put(APIConstants.OAuthConstants.OAUTH_CLIENT_SECRET, encryptedApiSecret);
@@ -203,16 +217,18 @@ public class PublisherCommonUtils {
                     apiDtoToUpdate.setEndpointConfig(endpointConfig);
                 }
                 if (endpointSecurity.get(APIConstants.OAuthConstants.ENDPOINT_SECURITY_SANDBOX) != null) {
-                    LinkedHashMap endpointSecuritySandbox = (LinkedHashMap) endpointSecurity
+                    Map endpointSecuritySandbox = (Map) endpointSecurity
                             .get(APIConstants.OAuthConstants.ENDPOINT_SECURITY_SANDBOX);
                     String sandboxEndpointType = (String) endpointSecuritySandbox
                             .get(APIConstants.OAuthConstants.ENDPOINT_SECURITY_TYPE);
 
                     // Change default value of customParameters JSONObject to String
-                    LinkedHashMap<String, String> customParametersHashMap =
-                            (LinkedHashMap<String, String>) endpointSecuritySandbox
-                                    .get(APIConstants.OAuthConstants.OAUTH_CUSTOM_PARAMETERS);
-                    String customParametersString = JSONObject.toJSONString(customParametersHashMap);
+                    if (!(endpointSecuritySandbox
+                            .get(APIConstants.OAuthConstants.OAUTH_CUSTOM_PARAMETERS) instanceof String)) {
+                        Map<String, String> customParametersHashMap = (Map<String, String>) endpointSecuritySandbox
+                                .get(APIConstants.OAuthConstants.OAUTH_CUSTOM_PARAMETERS);
+                        customParametersString = JSONObject.toJSONString(customParametersHashMap);
+                    }
                     endpointSecuritySandbox
                             .put(APIConstants.OAuthConstants.OAUTH_CUSTOM_PARAMETERS, customParametersString);
 
@@ -220,7 +236,7 @@ public class PublisherCommonUtils {
                         String apiSecret = endpointSecuritySandbox.get(APIConstants.OAuthConstants.OAUTH_CLIENT_SECRET)
                                 .toString();
 
-                        if (!apiSecret.equals("")) {
+                        if (StringUtils.isNotEmpty(apiSecret)) {
                             String encryptedApiSecret = cryptoUtil.encryptAndBase64Encode(apiSecret.getBytes());
                             endpointSecuritySandbox
                                     .put(APIConstants.OAuthConstants.OAUTH_CLIENT_SECRET, encryptedApiSecret);
@@ -358,10 +374,10 @@ public class PublisherCommonUtils {
                 apiToUpdate.setUriTemplates(apiDefinition.getURITemplates(newDefinition));
             }
         } else {
-            // TODO: update the asyncapi.yaml
+            String oldDefinition = apiProvider.getAsyncAPIDefinition(apiIdentifier.getUUID(), tenantDomain);
             AsyncApiParser asyncApiParser = new AsyncApiParser();
-            String apiDefinition = asyncApiParser.generateAsyncAPIDefinition(originalAPI);
-            apiProvider.saveAsyncApiDefinition(originalAPI, apiDefinition);
+            String updateAsyncAPIDefinition = asyncApiParser.updateAsyncAPIDefinition(oldDefinition, apiToUpdate);
+            apiProvider.saveAsyncApiDefinition(originalAPI, updateAsyncAPIDefinition);
         }
         apiToUpdate.setWsdlUrl(apiDtoToUpdate.getWsdlUrl());
 
@@ -572,12 +588,12 @@ public class PublisherCommonUtils {
      * @param additionalProperties Map<String, String>  properties to validate
      * @return error message if there is an validation error with additional properties.
      */
-    public static String validateAdditionalProperties(Map<String, String> additionalProperties) {
+    public static String validateAdditionalProperties(List<APIAdditionalPropertiesDTO> additionalProperties) {
 
         if (additionalProperties != null) {
-            for (Map.Entry<String, String> entry : additionalProperties.entrySet()) {
-                String propertyKey = entry.getKey().trim();
-                String propertyValue = entry.getValue();
+            for (APIAdditionalPropertiesDTO property : additionalProperties) {
+                String propertyKey = property.getName();
+                String propertyValue = property.getValue();
                 if (propertyKey.contains(" ")) {
                     return "Property names should not contain space character. Property '" + propertyKey + "' "
                             + "contains space in it.";
@@ -787,8 +803,20 @@ public class PublisherCommonUtils {
         return sb.toString();
     }
 
-    public static APIDTO.TypeEnum getAPIType(ServiceEntry.DefinitionType definitionType, String protocol) {
+    public static APIDTO.TypeEnum getAPIType(ServiceEntry.DefinitionType definitionType, String protocol)
+            throws APIManagementException {
+        if (ServiceEntry.DefinitionType.ASYNC_API.equals(definitionType)) {
+            if (protocol.isEmpty()) {
+                throw new APIManagementException("A protocol should be specified in the Async API definition",
+                        ExceptionCodes.MISSING_PROTOCOL_IN_ASYNC_API_DEFINITION);
+            } else if (!APIConstants.API_TYPE_WEBSUB.equals(protocol.toUpperCase()) &&
+                    !APIConstants.API_TYPE_SSE.equals(protocol.toUpperCase()) &&
+                    !APIConstants.API_TYPE_WS.equals(protocol.toUpperCase())) {
+                throw new APIManagementException("Unsupported protocol specified in Async API Definition",
+                        ExceptionCodes.UNSUPPORTED_PROTOCOL_SPECIFIED_IN_ASYNC_API_DEFINITION);
+            }
 
+        }
         switch (definitionType) {
             case WSDL1:
             case WSDL2:
@@ -926,9 +954,12 @@ public class PublisherCommonUtils {
         if (!APIConstants.PROTOTYPED.equals(apiToAdd.getStatus())) {
             apiToAdd.setStatus(APIConstants.CREATED);
         }
-        //we are setting the api owner as the logged in user until we support checking admin privileges and assigning
-        //  the owner as a different user
-        apiToAdd.setApiOwner(provider);
+
+        if (!apiToAdd.isAdvertiseOnly() || StringUtils.isBlank(apiToAdd.getApiOwner())) {
+            //we are setting the api owner as the logged in user until we support checking admin privileges and
+            //assigning the owner as a different user
+            apiToAdd.setApiOwner(provider);
+        }
 
         if (body.getKeyManagers() instanceof List) {
             apiToAdd.setKeyManagers((List<String>) body.getKeyManagers());
@@ -970,11 +1001,22 @@ public class PublisherCommonUtils {
         //this will fall if user does not have access to the API or the API does not exist
         API existingAPI = apiProvider.getAPIbyUUID(apiId, tenantDomain);
         String apiDefinition = response.getJsonContent();
+
+        AsyncApiParser asyncApiParser = new AsyncApiParser();
+        // Set uri templates
+        Set<URITemplate> uriTemplates = asyncApiParser.getURITemplates(
+                apiDefinition, APIConstants.API_TYPE_WS.equals(existingAPI.getType()));
+        if (uriTemplates == null || uriTemplates.isEmpty()) {
+            throw new APIManagementException(ExceptionCodes.NO_RESOURCES_FOUND);
+        }
+        existingAPI.setUriTemplates(uriTemplates);
+
+        // Update ws uri mapping
+        existingAPI.setWsUriMapping(asyncApiParser.buildWSUriMapping(apiDefinition));
+
         //updating APi with the new AsyncAPI definition
         apiProvider.saveAsyncApiDefinition(existingAPI, apiDefinition);
         apiProvider.updateAPI(existingAPI);
-        //load new topics
-        apiProvider.updateAPI(AsyncApiParserUtil.loadTopicsFromAsyncAPIDefinition(existingAPI, apiDefinition));
         //retrieves the updated AsyncAPI definition
         return apiProvider.getAsyncAPIDefinition(existingAPI.getId());
     }
@@ -1001,6 +1043,11 @@ public class PublisherCommonUtils {
             apiDefinition = oasParser.copyVendorExtensions(existingAPI.getSwaggerDefinition(), apiDefinition);
         } else {
             apiDefinition = OASParserUtil.preProcess(apiDefinition);
+        }
+        if (APIConstants.API_TYPE_SOAPTOREST.equals(existingAPI.getType())) {
+            List<SOAPToRestSequence> sequenceList = SequenceGenerator.generateSequencesFromSwagger(apiDefinition,
+                    existingAPI.getId());
+            existingAPI.setSoapToRestSequences(sequenceList);
         }
         Set<URITemplate> uriTemplates = null;
         uriTemplates = oasParser.getURITemplates(apiDefinition);
@@ -1160,6 +1207,22 @@ public class PublisherCommonUtils {
     }
 
     /**
+     * Update thumbnail of an API/API Product
+     *
+     * @param fileInputStream Input stream
+     * @param fileContentType The content type of the image
+     * @param apiProvider     API Provider
+     * @param apiId           API/API Product UUID
+     * @param tenantDomain    Tenant domain of the API
+     * @throws APIManagementException If an error occurs while updating the thumbnail
+     */
+    public static void updateThumbnail(InputStream fileInputStream, String fileContentType, APIProvider apiProvider,
+                                       String apiId, String tenantDomain) throws APIManagementException {
+        ResourceFile apiImage = new ResourceFile(fileInputStream, fileContentType);
+        apiProvider.setThumbnailToAPI(apiId, apiImage, tenantDomain);
+    }
+
+    /**
      * Add document DTO.
      *
      * @param documentDto Document DTO
@@ -1202,6 +1265,50 @@ public class PublisherCommonUtils {
     }
 
     /**
+     * Add documentation content of inline and markdown documents.
+     *
+     * @param documentation Documentation
+     * @param apiProvider   API Provider
+     * @param apiId         API/API Product UUID
+     * @param documentId    Document ID
+     * @param tenantDomain  Tenant domain of the API/API Product
+     * @param inlineContent Inline content string
+     * @throws APIManagementException If an error occurs while adding the documentation content
+     */
+    public static void addDocumentationContent(Documentation documentation, APIProvider apiProvider, String apiId,
+                                               String documentId, String tenantDomain, String inlineContent)
+            throws APIManagementException {
+        DocumentationContent content = new DocumentationContent();
+        content.setSourceType(DocumentationContent.ContentSourceType.valueOf(documentation.getSourceType().toString()));
+        content.setTextContent(inlineContent);
+        apiProvider.addDocumentationContent(apiId, documentId, tenantDomain, content);
+    }
+
+    /**
+     * Add documentation content of files.
+     *
+     * @param inputStream  Input Stream
+     * @param mediaType    Media type of the document
+     * @param filename     File name
+     * @param apiProvider  API Provider
+     * @param apiId        API/API Product UUID
+     * @param documentId   Document ID
+     * @param tenantDomain Tenant domain of the API/API Product
+     * @throws APIManagementException If an error occurs while adding the documentation file
+     */
+    public static void addDocumentationContentForFile(InputStream inputStream, String mediaType, String filename,
+                                                      APIProvider apiProvider, String apiId,
+                                                      String documentId, String tenantDomain)
+            throws APIManagementException {
+        DocumentationContent content = new DocumentationContent();
+        ResourceFile resourceFile = new ResourceFile(inputStream, mediaType);
+        resourceFile.setName(filename);
+        content.setResourceFile(resourceFile);
+        content.setSourceType(DocumentationContent.ContentSourceType.FILE);
+        apiProvider.addDocumentationContent(apiId, documentId, tenantDomain, content);
+    }
+
+    /**
      * Checks whether the list of tiers are valid given the all valid tiers.
      *
      * @param allTiers     All defined tiers
@@ -1237,8 +1344,8 @@ public class PublisherCommonUtils {
      * @throws FaultGatewaysException If an error occurs while updating an existing API Product
      */
     public static APIProduct updateApiProduct(APIProduct originalAPIProduct, APIProductDTO apiProductDtoToUpdate,
-                                              APIProvider apiProvider, String username) throws APIManagementException
-            , FaultGatewaysException {
+                                              APIProvider apiProvider, String username, String orgId)
+            throws APIManagementException, FaultGatewaysException {
 
         List<String> apiSecurity = apiProductDtoToUpdate.getSecurityScheme();
         //validation for tiers
@@ -1286,7 +1393,7 @@ public class PublisherCommonUtils {
         product.setUuid(originalAPIProduct.getUuid());
 
         Map<API, List<APIProductResource>> apiToProductResourceMapping = apiProvider.updateAPIProduct(product);
-        apiProvider.updateAPIProductSwagger(apiToProductResourceMapping, product);
+        apiProvider.updateAPIProductSwagger(originalAPIProduct.getUuid(), apiToProductResourceMapping, product, orgId);
 
         //preserve monetization status in the update flow
         apiProvider.configureMonetizationInAPIProductArtifact(product);
@@ -1297,20 +1404,19 @@ public class PublisherCommonUtils {
      * Add API Product with the generated swagger from the DTO.
      *
      * @param apiProductDTO API Product DTO
-     * @param provider      Provider name
      * @param username      Username
      * @return Created API Product object
      * @throws APIManagementException Error while creating the API Product
      * @throws FaultGatewaysException Error while adding the API Product to gateway
      */
-    public static APIProduct addAPIProductWithGeneratedSwaggerDefinition(APIProductDTO apiProductDTO, String provider,
-                                                                         String username)
+    public static APIProduct addAPIProductWithGeneratedSwaggerDefinition(APIProductDTO apiProductDTO, String username)
             throws APIManagementException, FaultGatewaysException {
 
         username = StringUtils.isEmpty(username) ? RestApiCommonUtil.getLoggedInUsername() : username;
+        String tenantDomain = RestApiCommonUtil.getLoggedInUserTenantDomain();
         APIProvider apiProvider = RestApiCommonUtil.getProvider(username);
         // if not add product
-        provider = apiProductDTO.getProvider();
+        String provider = apiProductDTO.getProvider();
         String context = apiProductDTO.getContext();
         if (!StringUtils.isBlank(provider) && !provider.equals(username)) {
             if (!APIUtil.hasPermission(username, APIConstants.Permissions.APIM_ADMIN)) {
@@ -1370,14 +1476,14 @@ public class PublisherCommonUtils {
 
         APIProduct productToBeAdded = APIMappingUtil.fromDTOtoAPIProduct(apiProductDTO, provider);
 
+        APIProductIdentifier createdAPIProductIdentifier = productToBeAdded.getId();
         Map<API, List<APIProductResource>> apiToProductResourceMapping = apiProvider
                 .addAPIProductWithoutPublishingToGateway(productToBeAdded);
-        apiProvider.addAPIProductSwagger(apiToProductResourceMapping, productToBeAdded);
-
-        APIProductIdentifier createdAPIProductIdentifier = productToBeAdded.getId();
         APIProduct createdProduct = apiProvider.getAPIProduct(createdAPIProductIdentifier);
+        apiProvider.addAPIProductSwagger(createdProduct.getUuid(), apiToProductResourceMapping, createdProduct,
+                tenantDomain);
 
-        //apiProvider.saveToGateway(createdProduct);
+        createdProduct = apiProvider.getAPIProduct(createdAPIProductIdentifier);
         return createdProduct;
     }
 
@@ -1385,5 +1491,138 @@ public class PublisherCommonUtils {
 
         return APIDTO.TypeEnum.WS.equals(apidto.getType()) || APIDTO.TypeEnum.SSE.equals(apidto.getType()) ||
                 APIDTO.TypeEnum.WEBSUB.equals(apidto.getType());
+    }
+
+    /**
+     * Add WSDL file of an API.
+     *
+     * @param fileContentType Content type of the file
+     * @param fileInputStream Input Stream
+     * @param api             API to which the WSDL belongs to
+     * @param apiProvider     API Provider
+     * @param tenantDomain    Tenant domain of the API
+     * @throws APIManagementException If an error occurs while adding the WSDL resource
+     */
+    public static void addWsdl(String fileContentType, InputStream fileInputStream, API api, APIProvider apiProvider,
+                               String tenantDomain) throws APIManagementException {
+        ResourceFile wsdlResource;
+        if (APIConstants.APPLICATION_ZIP.equals(fileContentType) || APIConstants.APPLICATION_X_ZIP_COMPRESSED
+                .equals(fileContentType)) {
+            wsdlResource = new ResourceFile(fileInputStream, APIConstants.APPLICATION_ZIP);
+        } else {
+            wsdlResource = new ResourceFile(fileInputStream, fileContentType);
+        }
+        api.setWsdlResource(wsdlResource);
+        apiProvider.addWSDLResource(api.getUuid(), wsdlResource, null, tenantDomain);
+    }
+
+    /**
+     * Set the generated SOAP to REST sequences from the swagger file to the API and update it.
+     *
+     * @param swaggerContent Swagger content
+     * @param api            API to update
+     * @param apiProvider    API Provider
+     * @param tenantDomain   Tenant domain of the API
+     * @return Updated API Object
+     * @throws APIManagementException If an error occurs while generating the sequences or updating the API
+     * @throws FaultGatewaysException If an error occurs while updating the API
+     */
+    public static API updateAPIBySettingGenerateSequencesFromSwagger(String swaggerContent, API api,
+                                                                     APIProvider apiProvider, String tenantDomain)
+            throws APIManagementException, FaultGatewaysException {
+        List<SOAPToRestSequence> list = SequenceGenerator.generateSequencesFromSwagger(swaggerContent, api.getId());
+        API updatedAPI = apiProvider.getAPIbyUUID(api.getUuid(), tenantDomain);
+        updatedAPI.setSoapToRestSequences(list);
+        return apiProvider.updateAPI(updatedAPI, api);
+    }
+
+    /**
+     * Add mediation sequences from file content.
+     *
+     * @param content            File content of the mediation policy to be added
+     * @param type               Type (in/out/fault) of the mediation policy to be added
+     * @param apiProvider        API Provider
+     * @param apiId              API ID of the mediation policy
+     * @param tenantDomain       Tenant domain of the API
+     * @param existingMediations Existing mediation sequences
+     *                           (This can be null when adding an API specific sequence)
+     * @return Added mediation
+     * @throws Exception If an error occurs while adding the mediation sequence
+     */
+    public static Mediation addMediationPolicyFromFile(String content, String type, APIProvider apiProvider,
+            String apiId, String tenantDomain, List<Mediation> existingMediations, boolean isAPISpecific)
+            throws Exception {
+        if (StringUtils.isNotEmpty(content)) {
+            OMElement seqElement = APIUtil.buildOMElement(new ByteArrayInputStream(content.getBytes()));
+            String localName = seqElement.getLocalName();
+            String fileName = seqElement.getAttributeValue(new QName("name"));
+            Mediation existingMediation = (existingMediations != null) ?
+                    checkInExistingMediations(existingMediations, fileName, type) :
+                    null;
+            // existingGlobalMediations will not be null for only API specific sequences.
+            // Otherwise, the value of this variable will be set before coming into this function
+            if (!isAPISpecific) {
+                if (existingMediation != null) {
+                    log.debug("Sequence" + fileName + " already exists");
+                } else {
+                    return addApiSpecificMediationPolicyFromFile(localName, content, fileName, type, apiProvider, apiId,
+                            tenantDomain);
+                }
+            } else {
+                if (existingMediation != null) {
+                    // This will happen only when updating an API specific sequence using apictl
+                    apiProvider.deleteApiSpecificMediationPolicy(apiId, existingMediation.getUuid(), tenantDomain);
+                }
+                return addApiSpecificMediationPolicyFromFile(localName, content, fileName, type, apiProvider, apiId,
+                        tenantDomain);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Add API specific mediation sequences from file content.
+     *
+     * @param localName    Local name of the mediation policy to be added
+     * @param content      File content of the mediation policy to be added
+     * @param fileName     File name of the mediation policy to be added
+     * @param type         Type (in/out/fault) of the mediation policy to be added
+     * @param apiProvider  API Provider
+     * @param apiId        API ID of the mediation policy
+     * @param tenantDomain Tenant domain of the API
+     * @return
+     * @throws APIManagementException If the sequence is malformed.
+     */
+    private static Mediation addApiSpecificMediationPolicyFromFile(String localName, String content, String fileName,
+            String type, APIProvider apiProvider, String apiId, String tenantDomain) throws APIManagementException {
+        if (APIConstants.MEDIATION_SEQUENCE_ELEM.equals(localName)) {
+            Mediation mediationPolicy = new Mediation();
+            mediationPolicy.setConfig(content);
+            mediationPolicy.setName(fileName);
+            mediationPolicy.setType(type);
+            // Adding API specific mediation policy
+            return apiProvider.addApiSpecificMediationPolicy(apiId, mediationPolicy, tenantDomain);
+        } else {
+            throw new APIManagementException("Sequence is malformed");
+        }
+    }
+
+    /**
+     * Check whether a mediation policy included in a list.
+     *
+     * @param existingMediations Existing mediations as a list
+     * @param mediationName      Mediation name to be checked
+     * @param type               Type of the mediation to be checked
+     * @return Matched mediation
+     */
+    public static Mediation checkInExistingMediations(List<Mediation> existingMediations, String mediationName,
+            String type) {
+        for (Mediation mediation : existingMediations) {
+            if (StringUtils.equals(mediation.getName(), mediationName) && StringUtils
+                    .equals(type.toLowerCase(), mediation.getType().toLowerCase())) {
+                return mediation;
+            }
+        }
+        return null;
     }
 }

@@ -192,7 +192,6 @@ export default function ApiProductCreateWrapper(props) {
             policies,
             apis: apiResources,
         };
-        apiData.gatewayEnvironments = settings.environment.map((env) => env.name);
         apiData.transport = ['http', 'https'];
         const newAPIProduct = new APIProduct(apiData);
         newAPIProduct
@@ -338,7 +337,7 @@ export default function ApiProductCreateWrapper(props) {
                                         </Button>
                                     )}
                                 {wizardStep === 0 && (
-                                    <Link to='/apis/'>
+                                    <Link to='/api-products/'>
                                         <Button>
                                             <FormattedMessage
                                                 id='Apis.Create.APIProduct.APIProductCreateWrapper.cancel'

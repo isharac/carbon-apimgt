@@ -130,6 +130,10 @@ const suggestions = {
             route: 'configuration',
         },
         {
+            label: 'Thumbnail',
+            route: 'configuration',
+        },
+        {
             label: 'Description',
             route: 'configuration',
         },
@@ -177,14 +181,18 @@ const suggestions = {
             label: 'Subscription Availability',
             route: 'subscriptions',
         },
+        {
+            label: 'Revisions',
+            route: 'deployments',
+        },
+        {
+            label: 'VHosts',
+            route: 'deployments',
+        },
     ],
     apiOnly: [
         {
             label: 'API Gateways',
-            route: 'deployments',
-        },
-        {
-            label: 'Microgateway Labels',
             route: 'deployments',
         },
         {
@@ -501,10 +509,6 @@ const suggestions = {
         },
         {
             label: 'API Gateways',
-            route: 'deployments',
-        },
-        {
-            label: 'Microgateway Labels',
             route: 'deployments',
         },
         {

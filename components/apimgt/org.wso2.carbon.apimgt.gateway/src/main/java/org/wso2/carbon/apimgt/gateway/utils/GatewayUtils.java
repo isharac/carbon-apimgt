@@ -36,21 +36,20 @@ import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.clustering.ClusteringAgent;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.description.AxisService;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.Mediator;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.ExceptionCodes;
+import org.wso2.carbon.apimgt.api.gateway.GatewayAPIDTO;
 import org.wso2.carbon.apimgt.common.gateway.dto.JWTInfoDto;
 import org.wso2.carbon.apimgt.common.gateway.dto.JWTValidationInfo;
 import org.wso2.carbon.apimgt.gateway.APIMgtGatewayConstants;
@@ -83,7 +82,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.Certificate;
 import java.security.interfaces.RSAPublicKey;
@@ -94,7 +92,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -156,7 +153,7 @@ public class GatewayUtils {
     public static String getIp(MessageContext messageContext) {
 
         //Set transport headers of the message
-        TreeMap<String, String> transportHeaderMap = (TreeMap<String, String>) messageContext
+        Map<String, String> transportHeaderMap = (Map<String, String>) messageContext
                 .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
         // Assigning an Empty String so that when doing comparisons, .equals method can be used without explicitly
         // checking for nullity.
@@ -207,26 +204,6 @@ public class GatewayUtils {
             }
 
             return queryParamsMap;
-        }
-        return null;
-    }
-
-    public static Map getJWTClaims(AuthenticationContext authContext) {
-
-        String assertion = authContext.getCallerToken();
-        if (StringUtils.isNotEmpty(assertion)) {
-            String[] jwtTokenArray = authContext.getCallerToken().split(Pattern.quote("."));
-            // decoding JWT
-            try {
-                byte[] jwtByteArray = Base64.decodeBase64(jwtTokenArray[1].getBytes("UTF-8"));
-                String jwtAssertion = new String(jwtByteArray, "UTF-8");
-                JSONParser parser = new JSONParser();
-                return (Map) parser.parse(jwtAssertion);
-            } catch (UnsupportedEncodingException e) {
-                log.error("Error while decoding jwt header", e);
-            } catch (ParseException e) {
-                log.error("Error while parsing jwt header", e);
-            }
         }
         return null;
     }
@@ -385,12 +362,16 @@ public class GatewayUtils {
 
         messageContext.setProperty(APIMgtGatewayConstants.THREAT_FOUND, true);
         messageContext.setProperty(APIMgtGatewayConstants.THREAT_CODE, errorCode);
+        messageContext.setProperty(SynapseConstants.ERROR_CODE, Integer.parseInt(errorCode));
         if (messageContext.isResponse()) {
             messageContext.setProperty(APIMgtGatewayConstants.THREAT_MSG, APIMgtGatewayConstants.BAD_RESPONSE);
+            messageContext.setProperty(SynapseConstants.ERROR_MESSAGE, APIMgtGatewayConstants.BAD_RESPONSE);
         } else {
             messageContext.setProperty(APIMgtGatewayConstants.THREAT_MSG, APIMgtGatewayConstants.BAD_REQUEST);
+            messageContext.setProperty(SynapseConstants.ERROR_MESSAGE, APIMgtGatewayConstants.BAD_REQUEST);
         }
         messageContext.setProperty(APIMgtGatewayConstants.THREAT_DESC, desc);
+        messageContext.setProperty(SynapseConstants.ERROR_DETAIL, desc);
         Mediator sequence = messageContext.getSequence(APIMgtGatewayConstants.THREAT_FAULT);
         // Invoke the custom error handler specified by the user
         if (sequence != null && !sequence.mediate(messageContext)) {
@@ -628,6 +609,12 @@ public class GatewayUtils {
             authContext.setApiPublisher(api.getAsString(APIConstants.JwtTokenConstants.API_PUBLISHER));
 
         }
+        authContext.setApplicationId("-1");
+        authContext.setApplicationName(APIConstants.INTERNAL_KEY_APP_NAME);
+        authContext.setApplicationUUID(UUID.nameUUIDFromBytes(APIConstants.INTERNAL_KEY_APP_NAME.
+                getBytes(StandardCharsets.UTF_8)).toString());
+        authContext.setApplicationTier(APIConstants.UNLIMITED_TIER);
+        authContext.setSubscriber(APIConstants.INTERNAL_KEY_APP_NAME);
         return authContext;
     }
 
@@ -848,7 +835,7 @@ public class GatewayUtils {
         Certificate publicCert = null;
         //Read the client-truststore.jks into a KeyStore
         try {
-            publicCert = APIUtil.getCertificateFromTrustStore(alias);
+            publicCert = APIUtil.getCertificateFromParentTrustStore(alias);
         } catch (APIManagementException e) {
             throw new APISecurityException(APISecurityConstants.API_AUTH_GENERAL_ERROR,
                     APISecurityConstants.API_AUTH_GENERAL_ERROR_MESSAGE, e);
@@ -1311,6 +1298,24 @@ public class GatewayUtils {
         }
         if (requestDestination != null) {
             messageContext.setProperty(APIMgtGatewayConstants.SYNAPSE_ENDPOINT_ADDRESS, requestDestination);
+        }
+    }
+
+    public static void setWebsocketEndpointsToBeRemoved(GatewayAPIDTO gatewayAPIDTO, String tenantDomain)
+            throws AxisFault {
+        String apiName = gatewayAPIDTO.getName();
+        String apiVersion = gatewayAPIDTO.getVersion();
+        if (apiName != null && apiVersion != null) {
+            String prefix = apiName.concat("--v").concat(apiVersion).concat("_API");
+            EndpointAdminServiceProxy endpointAdminServiceProxy = new EndpointAdminServiceProxy(tenantDomain);
+            String[] endpoints = endpointAdminServiceProxy.getEndpoints();
+            for (String endpoint : endpoints) {
+                if (endpoint.startsWith(prefix)) {
+                    gatewayAPIDTO.setEndpointEntriesToBeRemove(
+                            org.wso2.carbon.apimgt.impl.utils.GatewayUtils.addStringToList(endpoint,
+                                    gatewayAPIDTO.getEndpointEntriesToBeRemove()));
+                }
+            }
         }
     }
 }

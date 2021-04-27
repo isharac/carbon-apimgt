@@ -22,13 +22,13 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
+import org.wso2.carbon.apimgt.api.model.Environment;
 import org.wso2.carbon.apimgt.api.model.URITemplate;
 import org.wso2.carbon.apimgt.api.model.WebsubSubscriptionConfiguration;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
 import org.wso2.carbon.apimgt.impl.APIManagerConfigurationService;
 import org.wso2.carbon.apimgt.impl.APIManagerConfigurationServiceImpl;
-import org.wso2.carbon.apimgt.impl.dto.Environment;
 import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
 import org.wso2.carbon.apimgt.rest.api.publisher.v1.common.template.APITemplateBuilderImpl;
 
@@ -51,7 +51,7 @@ public class WebSubConfigContextTest {
         api.setUriTemplates(setAPIUriTemplates());
         api.setType(APIConstants.APITransportType.WEBSUB.toString());
         WebsubSubscriptionConfiguration webSubConfig =
-                new WebsubSubscriptionConfiguration("", "", "");
+                new WebsubSubscriptionConfiguration(false, "", "", "");
         api.setWebsubSubscriptionConfiguration(webSubConfig);
         Environment environment = new Environment();
         environment.setType("production");
@@ -81,7 +81,7 @@ public class WebSubConfigContextTest {
         api.setUriTemplates(setAPIUriTemplates());
         api.setType(APIConstants.APITransportType.WEBSUB.toString());
         WebsubSubscriptionConfiguration webSubConfig =
-                new WebsubSubscriptionConfiguration("9207975e1fef9c41fab41645f81dbf0f", "SHA1",
+                new WebsubSubscriptionConfiguration(true, "9207975e1fef9c41fab41645f81dbf0f", "SHA1",
                         "x-hub-signature");
         api.setWebsubSubscriptionConfiguration(webSubConfig);
         Environment environment = new Environment();

@@ -17,13 +17,14 @@
 import React, {
     useContext, useEffect, useState, useReducer,
 } from 'react';
-import { Grid, CircularProgress } from '@material-ui/core';
+import { Grid } from '@material-ui/core';
 import { withStyles } from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
 import { FormattedMessage, injectIntl } from 'react-intl';
 import PropTypes from 'prop-types';
 import Button from '@material-ui/core/Button';
 import { Link, withRouter } from 'react-router-dom';
+import CustomSplitButton from 'AppComponents/Shared/CustomSplitButton';
 import NewEndpointCreate from 'AppComponents/Apis/Details/Endpoints/NewEndpointCreate';
 import { APIContext } from 'AppComponents/Apis/Details/components/ApiContext';
 import cloneDeep from 'lodash.clonedeep';
@@ -84,6 +85,7 @@ function Endpoints(props) {
                 if (value) {
                     return { ...initState, endpointConfig: { ...tmpEndpointConfig, [action]: value } };
                 }
+                delete tmpEndpointConfig[action];
                 return { ...initState, endpointConfig: { ...tmpEndpointConfig } };
             }
             case 'select_endpoint_category': {
@@ -148,15 +150,10 @@ function Endpoints(props) {
             }
             case 'select_endpoint_type': {
                 const { endpointImplementationType, endpointConfig } = value;
-                let { endpointSecurity } = initState;
-                if (endpointSecurity && (endpointSecurity.username === '')) {
-                    endpointSecurity = null;
-                }
                 return {
                     ...initState,
                     endpointConfig,
                     endpointImplementationType,
-                    endpointSecurity: null,
                 };
             }
             default: {
@@ -171,14 +168,14 @@ function Endpoints(props) {
      *
      * @param {boolean} isRedirect Used for dynamic endpoints to redirect to the runtime config page.
      */
-    const saveAPI = (isRedirect) => {
-        const { endpointConfig, endpointImplementationType, endpointSecurity } = apiObject;
+    const handleSave = (isRedirect) => {
+        const { endpointConfig, endpointImplementationType } = apiObject;
         setUpdating(true);
         if (endpointImplementationType === 'INLINE') {
             api.updateSwagger(swagger).then((resp) => {
                 setSwagger(resp.obj);
             }).then(() => {
-                updateAPI({ endpointConfig, endpointImplementationType, endpointSecurity });
+                updateAPI({ endpointConfig, endpointImplementationType });
             }).finally(() => {
                 setUpdating(false);
                 if (isRedirect) {
@@ -195,6 +192,28 @@ function Endpoints(props) {
         }
     };
 
+    const handleSaveAndDeploy = () => {
+        const { endpointConfig, endpointImplementationType, endpointSecurity } = apiObject;
+        setUpdating(true);
+        if (endpointImplementationType === 'INLINE') {
+            api.updateSwagger(swagger).then((resp) => {
+                setSwagger(resp.obj);
+            }).then(() => {
+                updateAPI({ endpointConfig, endpointImplementationType, endpointSecurity });
+            }).finally(() => history.push({
+                pathname: api.isAPIProduct() ? `/api-products/${api.id}/deployments`
+                    : `/apis/${api.id}/deployments`,
+                state: 'deploy',
+            }));
+        } else {
+            updateAPI(apiObject).finally(() => history.push({
+                pathname: api.isAPIProduct() ? `/api-products/${api.id}/deployments`
+                    : `/apis/${api.id}/deployments`,
+                state: 'deploy',
+            }));
+        }
+    };
+
     /**
      * Validate the provided endpoint config object.
      *
@@ -203,46 +222,96 @@ function Endpoints(props) {
      * @return {{isValid: boolean, message: string}} The endpoint validity information.
      * */
     const validate = (implementationType) => {
-        const { endpointConfig, endpointSecurity } = apiObject;
-        if (endpointSecurity) {
-            if (endpointSecurity.type === 'OAUTH') {
-                if (endpointSecurity.grantType === 'PASSWORD') {
-                    if (endpointSecurity.tokenUrl === null
-                        || endpointSecurity.apiKey === null
-                        || endpointSecurity.apiSecret === null
-                        || endpointSecurity.username === null
-                        || endpointSecurity.password === null) {
-                        return {
-                            isValid: false,
-                            message: intl.formatMessage({
-                                id: 'Apis.Details.Endpoints.Endpoints.missing.security.oauth.password.error',
-                                defaultMessage: 'Endpoint Security Token URL'
-                                        + '/API Key/API Secret/Username/Password should not be empty',
-                            }),
-                        };
+        const { endpointConfig } = apiObject;
+        if (endpointConfig && endpointConfig.endpoint_security) {
+            const { production, sandbox } = endpointConfig.endpoint_security;
+            if (production && production.enabled) {
+                if (production.type === 'OAUTH') {
+                    if (production.grantType === 'PASSWORD') {
+                        if (production.tokenUrl === null
+                            || production.tokenUrl === ''
+                            || production.clientId === null
+                            || production.clientSecret === null
+                            || production.username === null
+                            || production.username === ''
+                            || production.password === null) {
+                            return {
+                                isValid: false,
+                                message: intl.formatMessage({
+                                    id: 'Apis.Details.Endpoints.Endpoints.missing.security.oauth.password.error',
+                                    defaultMessage: 'Endpoint Security Token URL'
+                                            + '/API Key/API Secret/Username/Password should not be empty',
+                                }),
+                            };
+                        }
+                    } else if (production.grantType === 'CLIENT_CREDENTIALS') {
+                        if (production.tokenUrl === null
+                            || production.tokenUrl === ''
+                            || production.clientId === null
+                            || production.clientSecret === null) {
+                            return {
+                                isValid: false,
+                                message: intl.formatMessage({
+                                    id: 'Apis.Details.Endpoints.Endpoints.missing.security.oauth.client.error',
+                                    defaultMessage: 'Endpoint Security Token URL'
+                                            + '/API Key/API Secret should not be empty',
+                                }),
+                            };
+                        }
                     }
-                } else if (endpointSecurity.grantType === 'CLIENT_CREDENTIALS') {
-                    if (endpointSecurity.tokenUrl === null
-                        || endpointSecurity.apiKey === null
-                        || endpointSecurity.apiSecret === null) {
-                        return {
-                            isValid: false,
-                            message: intl.formatMessage({
-                                id: 'Apis.Details.Endpoints.Endpoints.missing.security.oauth.client.error',
-                                defaultMessage: 'Endpoint Security Token URL'
-                                        + '/API Key/API Secret should not be empty',
-                            }),
-                        };
-                    }
+                } else if (production.username === '' || production.password === null) {
+                    return {
+                        isValid: false,
+                        message: intl.formatMessage({
+                            id: 'Apis.Details.Endpoints.Endpoints.missing.security.username.error',
+                            defaultMessage: 'Endpoint Security User Name/ Password should not be empty',
+                        }),
+                    };
                 }
-            } else if (endpointSecurity.username === '' || endpointSecurity.password === null) {
-                return {
-                    isValid: false,
-                    message: intl.formatMessage({
-                        id: 'Apis.Details.Endpoints.Endpoints.missing.security.username.error',
-                        defaultMessage: 'Endpoint Security User Name/ Password should not be empty',
-                    }),
-                };
+            }
+            if (sandbox && sandbox.enabled) {
+                if (sandbox.type === 'OAUTH') {
+                    if (sandbox.grantType === 'PASSWORD') {
+                        if (sandbox.tokenUrl === null
+                            || sandbox.tokenUrl === ''
+                            || sandbox.clientId === null
+                            || sandbox.clientSecret === null
+                            || sandbox.username === null
+                            || sandbox.username === ''
+                            || sandbox.password === null) {
+                            return {
+                                isValid: false,
+                                message: intl.formatMessage({
+                                    id: 'Apis.Details.Endpoints.Endpoints.missing.security.oauth.password.error',
+                                    defaultMessage: 'Endpoint Security Token URL'
+                                            + '/API Key/API Secret/Username/Password should not be empty',
+                                }),
+                            };
+                        }
+                    } else if (sandbox.grantType === 'CLIENT_CREDENTIALS') {
+                        if (sandbox.tokenUrl === null
+                            || sandbox.tokenUrl === ''
+                            || sandbox.clientId === null
+                            || sandbox.clientSecret === null) {
+                            return {
+                                isValid: false,
+                                message: intl.formatMessage({
+                                    id: 'Apis.Details.Endpoints.Endpoints.missing.security.oauth.client.error',
+                                    defaultMessage: 'Endpoint Security Token URL'
+                                            + '/API Key/API Secret should not be empty',
+                                }),
+                            };
+                        }
+                    }
+                } else if (sandbox.username === '' || sandbox.password === null) {
+                    return {
+                        isValid: false,
+                        message: intl.formatMessage({
+                            id: 'Apis.Details.Endpoints.Endpoints.missing.security.username.error',
+                            defaultMessage: 'Endpoint Security User Name/ Password should not be empty',
+                        }),
+                    };
+                }
             }
         }
         if (endpointConfig === null) {
@@ -324,6 +393,12 @@ function Endpoints(props) {
                 isValidEndpoint = endpointConfig.sandbox_endpoints.url !== ''
                         || endpointConfig.production_endpoints.url !== '';
             }
+            if (endpointConfig.sandbox_endpoints) {
+                isValidEndpoint &&= endpointConfig.sandbox_endpoints.url !== '';
+            }
+            if (endpointConfig.production_endpoints) {
+                isValidEndpoint &&= endpointConfig.production_endpoints.url !== '';
+            }
             return !isValidEndpoint ? {
                 isValid: false,
                 message: intl.formatMessage({
@@ -353,7 +428,7 @@ function Endpoints(props) {
     }, [apiObject]);
 
     const saveAndRedirect = () => {
-        saveAPI(true);
+        handleSave(true);
     };
     /**
      * Method to update the swagger object.
@@ -381,7 +456,7 @@ function Endpoints(props) {
                 ? <NewEndpointCreate generateEndpointConfig={generateEndpointConfig} apiType={apiObject.type} />
                 : (
                     <div className={classes.root}>
-                        <Typography variant='h4' align='left' gutterBottom>
+                        <Typography id='itest-api-details-endpoints-head' variant='h4' align='left' gutterBottom>
                             <FormattedMessage
                                 id='Apis.Details.Endpoints.Endpoints.endpoints.header'
                                 defaultMessage='Endpoints'
@@ -419,20 +494,26 @@ function Endpoints(props) {
                                 className={classes.buttonSection}
                             >
                                 <Grid item>
-                                    <Button
-                                        disabled={isUpdating || api.isRevision || !endpointValidity.isValid
-                                    || isRestricted(['apim:api_create'], api)}
-                                        type='submit'
-                                        variant='contained'
-                                        color='primary'
-                                        onClick={() => saveAPI()}
-                                    >
-                                        <FormattedMessage
-                                            id='Apis.Details.Endpoints.Endpoints.save'
-                                            defaultMessage='Save'
-                                        />
-                                        {isUpdating && <CircularProgress size={24} />}
-                                    </Button>
+                                    {api.isRevision || !endpointValidity.isValid
+                                        || isRestricted(['apim:api_create'], api) ? (
+                                            <Button
+                                                disabled
+                                                type='submit'
+                                                variant='contained'
+                                                color='primary'
+                                            >
+                                                <FormattedMessage
+                                                    id='Apis.Details.Configuration.Configuration.save'
+                                                    defaultMessage='Save'
+                                                />
+                                            </Button>
+                                        ) : (
+                                            <CustomSplitButton
+                                                handleSave={handleSave}
+                                                handleSaveAndDeploy={handleSaveAndDeploy}
+                                                isUpdating={isUpdating}
+                                            />
+                                        )}
                                 </Grid>
                                 <Grid item>
                                     <Link to={'/apis/' + api.id + '/overview'}>

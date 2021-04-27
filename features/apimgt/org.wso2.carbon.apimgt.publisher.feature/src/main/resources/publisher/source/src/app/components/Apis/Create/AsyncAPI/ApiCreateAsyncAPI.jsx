@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2021, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -31,7 +31,6 @@ import Alert from 'AppComponents/Shared/Alert';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import DefaultAPIForm from 'AppComponents/Apis/Create/Components/DefaultAPIForm';
 import APICreateBase from 'AppComponents/Apis/Create/Components/APICreateBase';
-import { useAppContext } from 'AppComponents/Shared/AppContext';
 
 import MenuItem from '@material-ui/core/MenuItem';
 import ListItemText from '@material-ui/core/ListItemText';
@@ -50,7 +49,6 @@ import ProvideAsyncAPI from './Steps/ProvideAsyncAPI';
 export default function ApiCreateAsyncAPI(props) {
     const [wizardStep, setWizardStep] = useState(0);
     const { history } = props;
-    const { settings } = useAppContext();
     // eslint-disable-next-line no-use-before-define
     const classes = useStyles();
     const [hideEndpoint, setHideEndpoint] = useState(true);
@@ -99,22 +97,25 @@ export default function ApiCreateAsyncAPI(props) {
 
     const protocols = [
         {
-            name: 'WEBSUB',
-            displayName: 'WebSub',
-        },
-        {
-            name: 'WEBSOCKET',
+            name: 'ws',
             displayName: 'WebSocket',
+            description: 'WebSocket API',
         },
         {
-            name: 'SSE',
-            displayName: 'Server Sent Events (SSE)',
+            name: 'websub',
+            displayName: 'WebSub',
+            description: 'WebHook API based on WebSub specification',
+        },
+        {
+            name: 'sse',
+            displayName: 'SSE',
+            description: 'Server-Sent Events',
         },
     ];
 
     const protocolKeys = {
         WebSocket: 'WS',
-        'Server Sent Events (SSE)': 'SSE',
+        SSE: 'SSE',
         WebSub: 'WEBSUB',
     };
 
@@ -185,8 +186,6 @@ export default function ApiCreateAsyncAPI(props) {
                 },
             };
         }
-        additionalProperties.gatewayEnvironments = Array.isArray(settings.environment)
-        && settings.environment.length > 0 ? [settings.environment[0].name] : [];
         const newAPI = new API(additionalProperties);
         const promisedResponse = inputType === 'file'
             ? newAPI.importAsyncAPIByFile(inputValue) : newAPI.importAsyncAPIByUrl(inputValue);

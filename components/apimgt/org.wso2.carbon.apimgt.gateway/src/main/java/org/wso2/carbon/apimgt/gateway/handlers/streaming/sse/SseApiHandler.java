@@ -33,7 +33,7 @@ import org.apache.synapse.core.axis2.Axis2Sender;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
-import org.wso2.carbon.apimgt.common.gateway.analytics.collectors.AnalyticsDataProvider;
+import org.wso2.carbon.apimgt.common.analytics.collectors.AnalyticsDataProvider;
 import org.wso2.carbon.apimgt.gateway.handlers.security.APIAuthenticationHandler;
 import org.wso2.carbon.apimgt.gateway.handlers.security.APISecurityUtils;
 import org.wso2.carbon.apimgt.gateway.handlers.security.AuthenticationContext;
@@ -45,6 +45,7 @@ import org.wso2.carbon.apimgt.gateway.utils.GatewayUtils;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.dto.VerbInfoDTO;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
+import org.wso2.carbon.context.CarbonContext;
 
 import java.util.List;
 import java.util.Map;
@@ -96,9 +97,9 @@ public class SseApiHandler extends APIAuthenticationHandler {
         AuthenticationContext authenticationContext = APISecurityUtils.getAuthenticationContext(synCtx);
         ThrottleInfo throttleInfo = getThrottlingInfo(authenticationContext, synCtx);
         boolean isThrottled = SseUtils.isRequestBlocked(authenticationContext, throttleInfo.getApiContext(),
-                                                        throttleInfo.getApiVersion(), throttleInfo.getAuthorizedUser(),
-                                                        throttleInfo.getRemoteIp(),
-                                                        throttleInfo.getSubscriberTenantDomain());
+                throttleInfo.getApiVersion(), authenticationContext.getUsername(),
+                throttleInfo.getRemoteIp(),
+                CarbonContext.getThreadLocalCarbonContext().getTenantDomain());
         if (!isThrottled) {
             // do throttling if request is not blocked by global conditions only
             isThrottled = SseUtils.isThrottled(throttleInfo.getSubscriberTenantDomain(),

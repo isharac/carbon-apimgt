@@ -118,7 +118,7 @@ class CommentAdd extends React.Component {
      */
     handleClickAddComment() {
         const {
-            apiId, allComments, commentsUpdate, intl, replyTo, handleShowReply,
+            apiId, intl, replyTo, handleShowReply, addComment, addReply,
         } = this.props;
         const { content } = this.state;
         const Api = new API();
@@ -131,14 +131,13 @@ class CommentAdd extends React.Component {
             Api.addComment(apiId, comment, replyTo)
                 .then((newComment) => {
                     this.setState({ content: '' });
-                    const addedComment = newComment.body;
                     if (replyTo === null) {
-                        allComments.push(addedComment);
-                    } else {
-                        const index = allComments.findIndex(this.filterCommentToAddReply)
-                        allComments[index].replies.list.push(addedComment);
+                        if (addComment) {
+                            addComment(newComment.body);
+                        }
+                    } else if (addReply) {
+                        addReply(newComment.body);
                     }
-                    commentsUpdate(allComments);
                 })
                 .catch((error) => {
                     console.error(error);
@@ -158,9 +157,19 @@ class CommentAdd extends React.Component {
             }));
         }
         this.setState({ currentLength: 0 });
-        handleShowReply(-1);
+        if (replyTo !== null) {
+            handleShowReply();
+        }
     }
 
+    handleCancel = () => {
+        const { cancelCallback } = this.props;
+        if (cancelCallback) {
+            cancelCallback();
+        } else {
+            this.handleClickCancel(-1);
+        }
+    };
     /**
      * Render method of the component
      * @returns {React.Component} Comment html component
@@ -186,10 +195,6 @@ class CommentAdd extends React.Component {
                             autoFocus
                             multiline
                             rows='4'
-                            label={intl.formatMessage({
-                                defaultMessage: 'Comment',
-                                id: 'Apis.Details.Comments.CommentAdd.comment',
-                            })}
                             className={classes.textField}
                             margin='normal'
                             placeholder={intl.formatMessage({
@@ -222,7 +227,7 @@ class CommentAdd extends React.Component {
                         </Grid>
                         {cancelButton && (
                             <Grid item>
-                                <Button onClick={() => this.handleClickCancel(-1)} className={classes.button}>
+                                <Button onClick={this.handleCancel} className={classes.button}>
                                     <FormattedMessage
                                         id='Apis.Details.Comments.CommentAdd.btn.cancel'
                                         defaultMessage='Cancel'
@@ -241,6 +246,7 @@ CommentAdd.defaultProps = {
     replyTo: null,
     handleShowReply: null,
     commentsUpdate: null,
+    cancelCallback: null,
 };
 
 CommentAdd.propTypes = {
@@ -254,6 +260,7 @@ CommentAdd.propTypes = {
     intl: PropTypes.shape({
         formatMessage: PropTypes.func,
     }).isRequired,
+    cancelCallback: PropTypes.func,
 };
 
 export default injectIntl(withStyles(styles, { withTheme: true })(CommentAdd));

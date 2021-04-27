@@ -127,7 +127,6 @@ class ApiConsole extends React.Component {
         const user = AuthManager.getUser();
         let apiData;
         let environments;
-        let containerMngEnvironments;
         let selectedEnvironment;
         let swagger;
         let productionAccessToken;
@@ -144,7 +143,6 @@ class ApiConsole extends React.Component {
                         return { name: endpoint.environmentName, displayName: endpoint.environmentDisplayName };
                     });
                 }
-                containerMngEnvironments = apiData.ingressURLs;
                 if (apiData.scopes) {
                     const scopeList = apiData.scopes.map((scope) => { return scope.key; });
                     this.setState({ scopes: scopeList });
@@ -152,12 +150,6 @@ class ApiConsole extends React.Component {
                 if (environments && environments.length > 0) {
                     selectedEnvironment = environments[0].name;
                     return this.apiClient.getSwaggerByAPIIdAndEnvironment(apiID, selectedEnvironment);
-                } else if (containerMngEnvironments
-                    && containerMngEnvironments.some((env) => env.clusterDetails.length > 0)) {
-                    const { clusterDetails: [{ clusterName }] } = containerMngEnvironments
-                        .find((env) => env.clusterDetails.length > 0);
-                    selectedEnvironment = clusterName;
-                    return this.apiClient.getSwaggerByAPIIdAndClusterName(apiID, clusterName);
                 } else {
                     return this.apiClient.getSwaggerByAPIId(apiID);
                 }
@@ -174,7 +166,6 @@ class ApiConsole extends React.Component {
                     api: apiData,
                     swagger,
                     environments,
-                    containerMngEnvironments,
                     productionAccessToken,
                     sandboxAccessToken,
                     selectedEnvironment,
@@ -385,17 +376,12 @@ class ApiConsole extends React.Component {
      */
     updateSwagger(environment) {
         const {
-            api, environments, containerMngEnvironments,
+            api, environments,
         } = this.state;
         let promiseSwagger;
 
-        if (environment) {
-            if (environments.find((e) => e.name === environment)) {
-                promiseSwagger = this.apiClient.getSwaggerByAPIIdAndEnvironment(api.id, environment);
-            } else if (containerMngEnvironments.some((env) => env.clusterDetails.length > 0
-                && env.clusterDetails.some((cluster) => cluster.clusterName === environment))) {
-                promiseSwagger = this.apiClient.getSwaggerByAPIIdAndClusterName(api.id, environment);
-            }
+        if (environment && environments.find((e) => e.name === environment)) {
+            promiseSwagger = this.apiClient.getSwaggerByAPIIdAndEnvironment(api.id, environment);
         } else {
             promiseSwagger = this.apiClient.getSwaggerByAPIId(api.id);
         }
@@ -413,7 +399,7 @@ class ApiConsole extends React.Component {
         const {
             api, notFound, swagger, securitySchemeType, selectedEnvironment, environments, scopes,
             username, password, productionAccessToken, sandboxAccessToken, selectedKeyType,
-            sandboxApiKey, productionApiKey, selectedKeyManager, containerMngEnvironments,
+            sandboxApiKey, productionApiKey, selectedKeyManager,
         } = this.state;
         const user = AuthManager.getUser();
         const downloadSwagger = JSON.stringify({ ...swagger });
@@ -437,9 +423,6 @@ class ApiConsole extends React.Component {
         const isPrototypedAPI = api.lifeCycleStatus && api.lifeCycleStatus.toLowerCase() === 'prototyped';
         return (
             <>
-                <Typography variant='h4' component='h1' className={classes.titleSub}>
-                    <FormattedMessage id='Apis.Details.ApiConsole.ApiConsole.title' defaultMessage='Try Out' />
-                </Typography>
                 <Paper className={classes.paper}>
                     <Grid container className={classes.grid}>
                         {!isPrototypedAPI && !user && (
@@ -473,7 +456,6 @@ class ApiConsole extends React.Component {
                         sandboxAccessToken={sandboxAccessToken}
                         setSandboxAccessToken={this.setSandboxAccessToken}
                         swagger={swagger}
-                        containerMngEnvironments={containerMngEnvironments}
                         environments={environments}
                         scopes={scopes}
                         setUsername={this.setUsername}
@@ -493,30 +475,32 @@ class ApiConsole extends React.Component {
                         api={this.state.api}
                     />
 
-                    <Grid container>
-                        <Grid xs={10} item />
-                        <Grid xs={1} item>
-                            <Button size='small' onClick={() => this.convertToPostman(downloadSwagger)}>
-                                <Icons icon={postmanIcon} width={30} height={30} />
-                                <FormattedMessage
-                                    id='Apis.Details.APIConsole.APIConsole.download.postman'
-                                    defaultMessage='Postman collection'
-                                />
-                            </Button>
-
-                        </Grid>
-                        <Grid xs={1} item>
-                            <a href={downloadLink} download={fileName}>
-                                <Button size='small'>
-                                    <Icons icon={openapiinitiativeIcon} width={30} height={30} className={classes.buttonIcon} />
+                    {api.type !== 'SOAP' && (
+                        <Grid container>
+                            <Grid xs={8} item />
+                            <Grid xs={2} item>
+                                <Button size='small' onClick={() => this.convertToPostman(downloadSwagger)}>
+                                    <Icons icon={postmanIcon} width={30} height={30} className={classes.buttonIcon} />
                                     <FormattedMessage
-                                        id='Apis.Details.APIConsole.APIConsole.download.swagger'
-                                        defaultMessage='OpenAPI'
+                                        id='Apis.Details.APIConsole.APIConsole.download.postman'
+                                        defaultMessage='Postman collection'
                                     />
                                 </Button>
-                            </a>
+
+                            </Grid>
+                            <Grid xs={2} item>
+                                <a href={downloadLink} download={fileName}>
+                                    <Button size='small'>
+                                        <Icons icon={openapiinitiativeIcon} width={30} height={30} className={classes.buttonIcon} />
+                                        <FormattedMessage
+                                            id='Apis.Details.APIConsole.APIConsole.download.swagger'
+                                            defaultMessage='OpenAPI'
+                                        />
+                                    </Button>
+                                </a>
+                            </Grid>
                         </Grid>
-                    </Grid>
+                    )}
                 </Paper>
                 <Paper className={classes.swaggerUIPaper}>
                     <SwaggerUI

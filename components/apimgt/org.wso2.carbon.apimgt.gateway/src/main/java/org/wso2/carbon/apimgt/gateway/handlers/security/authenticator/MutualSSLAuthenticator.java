@@ -22,10 +22,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.rest.RESTConstants;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
-import org.wso2.carbon.apimgt.gateway.APIMgtGatewayConstants;
 import org.wso2.carbon.apimgt.gateway.handlers.Utils;
 import org.wso2.carbon.apimgt.gateway.handlers.security.APISecurityConstants;
 import org.wso2.carbon.apimgt.gateway.handlers.security.APISecurityException;
@@ -37,12 +35,12 @@ import org.wso2.carbon.apimgt.gateway.internal.ServiceReferenceHolder;
 import org.wso2.carbon.apimgt.gateway.utils.GatewayUtils;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.dto.VerbInfoDTO;
+import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 import org.wso2.carbon.apimgt.keymgt.model.entity.API;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
@@ -60,11 +58,6 @@ public class MutualSSLAuthenticator implements Authenticator {
 
     // <UniqueIdentifierName,Tier> -Format
     private HashMap<String, String> certificates;
-
-    static {
-        challengeString = "Mutual SSL realm=\"" + ServiceReferenceHolder.getInstance().getServerConfigurationService()
-                .getFirstProperty("Name") + "\"";
-    }
 
     /**
      * Initialized the mutual SSL authenticator.
@@ -101,12 +94,17 @@ public class MutualSSLAuthenticator implements Authenticator {
 
     @Override
     public AuthenticationResponse authenticate(MessageContext messageContext) {
+
         org.apache.axis2.context.MessageContext axis2MessageContext = ((Axis2MessageContext) messageContext)
                 .getAxis2MessageContext();
         // try to retrieve the certificate
         X509Certificate sslCertObject;
         try {
             sslCertObject = Utils.getClientCertificate(axis2MessageContext);
+            if (!APIUtil.isCertificateExistsInListenerTrustStore(sslCertObject)) {
+                log.debug("Certificate in Header didn't exist in truststore");
+                sslCertObject = null;
+            }
         } catch (APIManagementException e) {
             return new AuthenticationResponse(false, isMandatory, !isMandatory,
                     APISecurityConstants.API_AUTH_GENERAL_ERROR, e.getMessage());
@@ -207,7 +205,8 @@ public class MutualSSLAuthenticator implements Authenticator {
 
     @Override
     public String getChallengeString() {
-        return challengeString;
+        return "Mutual SSL realm=\"" + ServiceReferenceHolder.getInstance().getServerConfigurationService()
+                .getFirstProperty("Name") + "\"";
     }
 
     @Override

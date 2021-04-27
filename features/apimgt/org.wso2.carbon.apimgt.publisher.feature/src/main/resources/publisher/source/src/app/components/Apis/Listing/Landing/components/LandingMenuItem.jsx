@@ -8,11 +8,10 @@ import Button from '@material-ui/core/Button';
 import { makeStyles } from '@material-ui/core/styles';
 
 const useStyles = makeStyles((theme) => ({
-    lintRoot: {
+    linkRoot: {
         color: theme.custom.landingPage.menu.primary,
         '&:hover': {
             backgroundColor: '#0B78F014',
-            padding: '2px',
             textDecoration: 'none',
         },
     },
@@ -22,7 +21,7 @@ const LandingMenuItem = (props) => {
     const {
         helperText, children, id, linkTo, component = 'Link', onClick, dense,
     } = props;
-    const { lintRoot } = useStyles();
+    const { linkRoot } = useStyles();
     return (
         <Grid
             item
@@ -36,7 +35,7 @@ const LandingMenuItem = (props) => {
                 Pattern as suggested in https://material-ui.com/guides/composition/#link */}
                 {component.toLowerCase() === 'link' && (
                     <Link
-                        className={lintRoot}
+                        className={linkRoot}
                         id={id}
                         component={RouterLink}
                         to={linkTo}
@@ -46,6 +45,7 @@ const LandingMenuItem = (props) => {
                 )}
                 {component.toLowerCase() === 'button' && (
                     <Button
+                        id={id}
                         size={dense ? 'small' : 'medium'}
                         onClick={onClick}
                         color='primary'

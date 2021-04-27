@@ -28,6 +28,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -35,6 +36,7 @@ import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
+import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.common.gateway.dto.APIRequestInfoDTO;
 import org.wso2.carbon.apimgt.common.gateway.dto.ExtensionResponseDTO;
 import org.wso2.carbon.apimgt.common.gateway.dto.ExtensionResponseStatus;
@@ -162,12 +164,18 @@ public class ExtensionListenerUtil {
         requestDTO.setApiRequestInfo(apiRequestInfoDTO);
         requestDTO.setMsgInfo(msgInfoDTO);
         requestDTO.setCustomProperty(getCustomPropertyMapFromMsgContext(messageContext));
-        org.apache.axis2.context.MessageContext axis2MC =
-                ((Axis2MessageContext) messageContext).getAxis2MessageContext();
-        Object sslCertsObject = axis2MC.getProperty(NhttpConstants.SSL_CLIENT_AUTH_CERT_X509);
+
         javax.security.cert.X509Certificate[] clientCerts = null;
-        if (sslCertsObject != null) {
-            clientCerts = (X509Certificate[]) sslCertsObject;
+
+        try {
+            X509Certificate clientCertificate = Utils.getClientCertificate(
+                    ((Axis2MessageContext) messageContext).getAxis2MessageContext());
+
+            if (clientCertificate != null) {
+                clientCerts = new X509Certificate[]{clientCertificate};
+            }
+        } catch (APIManagementException e) {
+            log.error("Error when getting client certificate", e);
         }
         requestDTO.setClientCerts(clientCerts);
         return requestDTO;
@@ -288,6 +296,7 @@ public class ExtensionListenerUtil {
                     JsonUtil.removeJsonPayload(axis2MC);
                     JsonUtil.getNewJsonPayload(axis2MC, payload, true, true);
                     axis2MC.setProperty(Constants.Configuration.MESSAGE_TYPE, APIConstants.APPLICATION_JSON_MEDIA_TYPE);
+                    axis2MC.setProperty(Constants.Configuration.CONTENT_TYPE, APIConstants.APPLICATION_JSON_MEDIA_TYPE);
                 } else {
                     // by default treat payload in well formed xml format
                     OMElement omElement = AXIOMUtil.stringToOM(payload);
@@ -296,6 +305,7 @@ public class ExtensionListenerUtil {
                     axis2MC.setProperty(Constants.Configuration.MESSAGE_TYPE,
                             APIConstants.APPLICATION_XML_SOAP_MEDIA_TYPE);
                 }
+                axis2MC.removeProperty(APIConstants.NO_ENTITY_BODY);
             } catch (IOException | XMLStreamException e) {
                 log.error("Error while setting payload " + axis2MC.getLogIDString(), e);
             }
@@ -321,7 +331,17 @@ public class ExtensionListenerUtil {
                 log.debug("Continuing the handler flow " + axis2MC.getLogIDString());
             }
             return true;
-        } else if (ExtensionResponseStatus.RETURN_RESPONSE.toString().equals(responseStatus)) {
+        } else if (ExtensionResponseStatus.RETURN_ERROR.toString().equals(responseStatus)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Continuing the handler error flow " + axis2MC.getLogIDString());
+            }
+            messageContext.setProperty(SynapseConstants.ERROR_CODE,
+                    APIConstants.ExtensionListenerConstants.API_EXTENSION_LISTENER_ERROR);
+            messageContext.setProperty(SynapseConstants.ERROR_DETAIL,
+                    APIConstants.ExtensionListenerConstants.API_EXTENSION_LISTENER_ERROR_MESSAGE);
+        }
+        if (ExtensionResponseStatus.RETURN_RESPONSE.toString().equals(responseStatus) ||
+                ExtensionResponseStatus.RETURN_ERROR.toString().equals(responseStatus)) {
             // This property need to be set to avoid sending the content in pass-through pipe (request message)
             // as the response.
             axis2MC.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);

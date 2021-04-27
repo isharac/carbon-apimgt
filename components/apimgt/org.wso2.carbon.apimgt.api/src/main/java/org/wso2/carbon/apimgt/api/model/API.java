@@ -110,6 +110,7 @@ public class API implements Serializable {
     private boolean advertiseOnly;
     private String apiOwner;
     private String redirectURL;
+    private String vendor;
 
     private String subscriptionAvailability;
     private String subscriptionAvailableTenants;
@@ -167,11 +168,6 @@ public class API implements Serializable {
      * Property to indicate the monetization status of the particular API.
      */
     private boolean isMonetizationEnabled = false;
-
-    /**
-     * Property to hold selected deployment environments of the  particular API.
-     */
-    private Set<DeploymentEnvironments> deploymentEnvironments;
 
     // Used for endpoint environments configured with non empty URLs
     private Set<String> environmentList;
@@ -459,6 +455,14 @@ public class API implements Serializable {
 
     public void setRedirectURL(String redirectURL) {
         this.redirectURL = redirectURL;
+    }
+
+    public String getAdvertiseOnlyAPIVendor() {
+        return vendor;
+    }
+
+    public void setAdvertiseOnlyAPIVendor(String advertiseOnlyAPIVendor) {
+        this.vendor = advertiseOnlyAPIVendor;
     }
 
     public API(APIIdentifier id) {
@@ -1176,14 +1180,6 @@ public class API implements Serializable {
         this.keyManagers = keyManagers;
     }
 
-    public Set<DeploymentEnvironments> getDeploymentEnvironments() {
-        return deploymentEnvironments;
-    }
-
-    public void setDeploymentEnvironments(Set<DeploymentEnvironments> deploymentEnvironments) {
-        this.deploymentEnvironments = deploymentEnvironments;
-    }
-    
     public Mediation getInSequenceMediation() {
         return inSequenceMediation;
     }

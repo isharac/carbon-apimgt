@@ -35,7 +35,7 @@ class API extends Resource {
             this.version = version;
             this.context = context;
             this.isDefaultVersion = false;
-            this.gatewayEnvironments = ['Production and Sandbox']; //todo: load the environments from settings API
+            this.gatewayEnvironments = ['Default']; //todo: load the environments from settings API
             this.transport = ['http', 'https'];
             this.visibility = 'PUBLIC';
             this.endpointConfig = {
@@ -411,10 +411,10 @@ class API extends Resource {
     /**
      * Get a list of applications from all users
      */
-    getApplicationList() {
+    getApplicationList(params) {
         return this.client.then((client) => {
             return client.apis['Application (Collection)'].get_applications(
-                this._requestMetaData(),
+                params, this._requestMetaData(),
             );
         });
     }
@@ -492,72 +492,6 @@ class API extends Resource {
             const data = { name, displayName, description, vhosts };
             return client.apis['Environments'].put_environments__environmentId_(
                 { environmentId: id },
-                { requestBody: data },
-                this._requestMetaData(),
-            );
-        });
-    }
-
-    // TODO: (renuka) Removed labels Rest API and this also should be removed
-    /**
-     * Get a list of available Microgateway labels
-     */
-    getMicrogatewayLabelList() {
-        return this.client.then((client) => {
-            return client.apis['Label Collection'].get_labels(
-                this._requestMetaData(),
-            );
-        });
-    }
-
-    // TODO: (renuka) Removed labels Rest API and this also should be removed
-     /**
-     * Delete a Microgateway Label
-     */
-    deleteMicrogatewayLabel(id) {
-        return this.client.then((client) => {
-            return client.apis['Label'].delete_labels__labelId_(
-                { labelId: id },
-                this._requestMetaData(),
-            );
-        });
-    }
-
-    // TODO: (renuka) Removed labels Rest API and this also should be removed
-     /**
-     * Add a Microgateway Label
-     */
-    addMicrogatewayLabel(name, description, hosts,  callback = null) {
-        return this.client.then((client) => {
-            const data = {
-                name: name,
-                description: description,
-                accessUrls: hosts,
-            };
-            const payload = {
-                'Content-Type': 'application/json',
-            };
-            return client.apis['Label'].post_labels(
-                payload,
-                { requestBody: data },
-                this._requestMetaData(),
-            );
-        });
-    }
-
-    // TODO: (renuka) Removed labels Rest API and this also should be removed
-     /**
-     * Update a Microgateway Label
-     */
-    updateMicrogatewayLabel(id, name, description, hosts,  callback = null) {
-        return this.client.then((client) => {
-            const data = {
-                name: name,
-                description: description,
-                accessUrls: hosts,
-            };
-            return client.apis['Label'].put_labels__labelId_(
-                { labelId: id },
                 { requestBody: data },
                 this._requestMetaData(),
             );
